@@ -1,6 +1,7 @@
-# ResearchPulse
+# ResearchPulse 🚧
 
-A full stack biomedical research discovery platform built with FastAPI and React.
+> Full stack biomedical research discovery platform — actively in development.
+> Built with FastAPI, PostgreSQL, and React + TypeScript.
 
 ## Status
 **Active development** — Phase 1 (Core) in progress
