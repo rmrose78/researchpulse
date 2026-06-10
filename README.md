@@ -1,4 +1,4 @@
-# ResearchPulse 🚧
+# ResearchPulse
 
 > Full stack biomedical research discovery platform — actively in development.
 > Built with FastAPI, PostgreSQL, and React + TypeScript.
