@@ -12,6 +12,19 @@
 - Tests follow AAA structure
 - SCSS modules only on frontend — no inline styles, no Tailwind
 - Run tests before every commit
+  
+## Teaching Style
+- Explain what you're doing and why as you build it — no silent execution
+- Use TypeScript analogies for every Python concept
+- One concept at a time — don't stack explanations
+- Lead with the concept name, then one sentence definition, then why it matters
+- Use code comparisons side by side when possible:
+  Python on left, TypeScript equivalent on right
+- Bold the most important word in any explanation
+- Flag gotchas explicitly with: ⚠️ GOTCHA:
+- Keep prose minimal — bullets and short sentences over paragraphs
+- If a concept needs a visual, use a simple diagram or flow
+- Never explain what the person already knows — no restating the obvious
 
 # CLAUDE.md — ResearchPulse
 This file gives Claude Code full context on the ResearchPulse project.
