@@ -1,5 +1,19 @@
-# CLAUDE.md — ResearchPulse
+## Commands
+- Activate venv: `source backend/venv/bin/activate`
+- Start backend: `cd backend && uvicorn app.main:app --reload`
+- Run tests: `cd backend && pytest tests/ -v`
+- Install dependencies: `cd backend && pip install -r requirements.txt`
 
+## Critical Rules
+- Never commit .env
+- Routers stay thin — all logic goes in services
+- Never write raw SQL — SQLAlchemy only
+- All route handlers and service methods must be async
+- Tests follow AAA structure
+- SCSS modules only on frontend — no inline styles, no Tailwind
+- Run tests before every commit
+
+# CLAUDE.md — ResearchPulse
 This file gives Claude Code full context on the ResearchPulse project.
 Read this before writing any code or making any decisions.
 
