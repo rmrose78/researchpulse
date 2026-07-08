@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import search
+from app.database import engine, Base
+import app.models.reading_list
 
 app = FastAPI(
     title="ResearchPulse API",
@@ -15,6 +17,9 @@ app.add_middleware(
     allow_methods=["*"],                      # Allow GET, POST, PUT, DELETE etc
     allow_headers=["*"],                      # Allow any headers
 )
+
+# Auto-create tables on startup
+Base.metadata.create_all(bind=engine)
 
 app.include_router(search.router)
 
