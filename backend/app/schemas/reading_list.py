@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from datatime import datetime
+from datetime import datetime
 
 class SaveArticleRequest(BaseModel):
     pmid: str
