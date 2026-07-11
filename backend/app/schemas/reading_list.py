@@ -19,4 +19,4 @@ class SavedArticleResponse(BaseModel):
     doi: str | None = None
     saved_at: datetime
 
-    model_Config = {"from_attributes": True}
+    model_config = {"from_attributes": True}
