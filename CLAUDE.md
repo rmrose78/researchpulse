@@ -1,5 +1,4 @@
 ## Skill Shortcuts
-- "run tests" → read .claude/skills/pytest-run.md and execute
 - "write tests for <file>" → read .claude/skills/pytest-backend.md and write tests for that file
 - "fix failing tests" → read .claude/skills/pytest-fix.md and fix failures using TDD
 
