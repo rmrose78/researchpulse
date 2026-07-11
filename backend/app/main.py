@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import search
+from app.routers import search, reading_list
 from app.database import engine, Base
 import app.models.reading_list
 
@@ -22,6 +22,7 @@ app.add_middleware(
 Base.metadata.create_all(bind=engine)
 
 app.include_router(search.router)
+app.include_router(reading_list.router)
 
 @app.get("/health") 
 async def health_check():
