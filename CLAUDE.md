@@ -1,3 +1,8 @@
+## Skill Shortcuts
+- "run tests" → read .claude/skills/pytest-run.md and execute
+- "write tests for <file>" → read .claude/skills/pytest-backend.md and write tests for that file
+- "fix failing tests" → read .claude/skills/pytest-fix.md and fix failures using TDD
+
 ## Commands
 - Activate venv: `source backend/venv/bin/activate`
 - Start backend: `cd backend && uvicorn app.main:app --reload`
@@ -12,6 +17,19 @@
 - Tests follow AAA structure
 - SCSS modules only on frontend — no inline styles, no Tailwind
 - Run tests before every commit
+
+## Communication
+Communication Style:
+- Dispense with all conversational filler (No "Certainly!", "Here is the code", or summaries).
+- Zero corporate or academic jargon. Use plain, direct English.
+- Do not explain obvious logic. Only explain complex algorithmic decisions.
+- Default to the simplest, most readable approach.
+
+Output Format:
+- Return ONLY the code, or the code with immediate unit tests.
+- Put all long outputs into an Artifact so they can be edited section by section.
+- When writing fixes, provide only the minimal reproducible snippet to change, not the whole file, unless explicitly requested.
+Use code with caution.
   
 ## Teaching Style
 - Explain what you're doing and why as you build it — no silent execution
@@ -89,7 +107,7 @@ the Fort Meade, Maryland area (Leidos, Booz Allen).
 ### Hosting
 - Netlify — frontend
 - Railway — backend + PostgreSQL
-
+  
 ---
 
 ## Architecture

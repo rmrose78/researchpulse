@@ -42,13 +42,13 @@ def test_search_result_has_required_fields():
     assert "title" in result
     assert "authors" in result
 
-    def test_get_article_invalid_pmid():
-        # Arrange
-        pmid = "00000000"
+def test_get_article_invalid_pmid():
+    # Arrange
+    pmid = "00000000"
 
-        # Act
-        response = client.get(f"/api/search/{pmid}")
+    # Act
+    response = client.get(f"/api/search/{pmid}")
 
-        # Assert
-        assert response.status_code == 404
+    # Assert
+    assert response.status_code == 404
 

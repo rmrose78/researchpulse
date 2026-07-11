@@ -1,3 +1,4 @@
+import asyncio
 import httpx
 import xml.etree.ElementTree as ET
 from app.config import settings
@@ -12,6 +13,19 @@ class PubMedService:
         }
         if self.api_key:
             self.base_params["api_key"] = self.api_key
+
+    async def _get_with_retry(
+        self, client: httpx.AsyncClient, url: str, params: dict, max_attempts: int = 4
+    ) -> httpx.Response:
+        # NCBI throttles unauthenticated requests to 3/sec — back off and retry on 429
+        # instead of surfacing NCBI's own rate limit as a PubMed API error.
+        for attempt in range(max_attempts):
+            resp = await client.get(url, params=params)
+            if resp.status_code == 429 and attempt < max_attempts - 1:
+                await asyncio.sleep(0.5 * (2 ** attempt))
+                continue
+            return resp
+        return resp
 
     async def search(
         self,
@@ -30,7 +44,8 @@ class PubMedService:
 
         # Step 1: esearch - get matching PMIDs
         async with httpx.AsyncClient() as client:
-            search_resp = await client.get(
+            search_resp = await self._get_with_retry(
+                client,
                 f"{self.base_url}/esearch.fcgi",
                 params={
                     **self.base_params,
@@ -55,7 +70,8 @@ class PubMedService:
     
     async def _fetch_articles(self, pmids: list[str]) -> list[ArticleSearchResult]:
         async with httpx.AsyncClient() as client:
-            fetch_resp = await client.get(
+            fetch_resp = await self._get_with_retry(
+                client,
                 f"{self.base_url}/efetch.fcgi",
                 params = {
                     **self.base_params,
@@ -107,7 +123,8 @@ class PubMedService:
     
     async def get_article(self, pmid: str):
         async with httpx.AsyncClient() as client:
-            resp = await client.get(
+            resp = await self._get_with_retry(
+                client,
                 f"{self.base_url}/efetch.fcgi",
                 params = {
                     **self.base_params,
@@ -116,6 +133,8 @@ class PubMedService:
                     "rettype": "abstract",
                 }
             )
+            if resp.status_code == 400:
+                return None
             resp.raise_for_status()
 
         root = ET.fromstring(resp.text)
