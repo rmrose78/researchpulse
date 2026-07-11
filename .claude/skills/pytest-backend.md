@@ -62,6 +62,26 @@ response = client.delete(f"/api/endpoint/{id}")
 - 422 — validation error (bad input)
 - 502 — external API error (PubMed down)
 
+## Red-Green Validation (Required for Every New Test)
+
+Before finalizing any new test, always verify it can fail:
+
+1. Write the test
+2. Temporarily flip the assertion to force failure:
+```python
+# Change this:
+assert response.status_code == 201
+
+# To this temporarily:
+assert response.status_code == 999
+```
+3. Run pytest — confirm it FAILS (red)
+4. Flip assertion back to correct value
+5. Run pytest — confirm it PASSES (green)
+6. Only then is the test considered valid
+
+**Never accept a passing test that was never seen failing first.**
+
 ## Example — Search Endpoint Tests
 ```python
 from fastapi.testclient import TestClient
