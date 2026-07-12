@@ -3,6 +3,8 @@
 Run through this before writing any frontend tests.
 Every item must pass before committing.
 
+IMPORTANT: we should be using best accessiblity practices on frontend.
+
 ## Semantic HTML
 - [ ] Correct elements used — `nav`, `main`, `section`, `button`, `input`
 - [ ] No `div` used where a semantic element exists
@@ -21,6 +23,10 @@ Every item must pass before committing.
 - [ ] Tab order is logical — follows visual reading order
 - [ ] Enter and Space activate buttons
 - [ ] Escape closes modals and dropdowns
+- [ ] `<nav>` is wrapped in `<header>` landmark
+- [ ] Brand/logo links to home with aria-label
+- [ ] Skip link is visually hidden until focused — not display:none
+- [ ] `<html lang="en">` present in index.html
 
 ## Focus
 - [ ] `:focus-visible` styles defined and visible

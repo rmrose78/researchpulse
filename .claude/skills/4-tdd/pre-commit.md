@@ -16,6 +16,7 @@ Run through every item before committing. Do not commit if any item fails.
 
 ## Frontend Only
 - [ ] a11y-checklist.md completed — all items pass
+- [ ] Every new component with rendered markup has a jest-axe test (`expect(await axe(container)).toHaveNoViolations()`), with one axe assertion per meaningfully distinct render state (loading, empty, error, success, expanded/collapsed, etc.) — not just the default render
 - [ ] Developer confirmed visual verification
 - [ ] SCSS module exists for every new component
 - [ ] No inline styles
