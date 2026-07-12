@@ -5,47 +5,43 @@ description: Implement a single issue using TDD. Backend is test-first. Frontend
 
 # Skill: tdd
 
-Implement a single vertical slice issue. One issue at a time. Never move to the next issue until the current one is complete and all tests are green.
+Implement one vertical slice issue at a time. Never move to the next
+issue until the current one is visually verified and all tests green.
+
+## Before Starting
+1. Read the issue file from `docs/issues/<feature-name>/`
+2. If frontend work is involved — read `fe-standards.md` in this directory
+3. If committing — run through `pre-commit.md` in this directory
 
 ## Rules
-- Only implement ONE issue per session
-- Read the issue file from `docs/issues/<feature-name>/` before starting
-- Never skip red-green verification — a test never seen failing is not valid
-- Never fix a test to match broken code — fix the code
-- Run the full test suite after every change to catch regressions
-- Commit when all tests pass
+- ONE issue per session
+- Never commit without developer visual confirmation
+- Never commit without running pre-commit.md checklist
+- Act as UI/UX engineer — produce modern, accessible, polished UI
+- Developer is product manager — flag design decisions for approval
+- Never auto-commit — always show visual verification instructions first
 
 ---
 
 ## Backend Flow — Test First
 
-For FastAPI endpoints follow strict red-green-refactor:
-
 ```
-1. RED    — write a failing test for ONE acceptance criterion
-2. VERIFY — run tests, confirm this specific test fails
-3. GREEN  — write minimum code to make it pass
+1. RED    — write failing test for ONE criterion
+2. VERIFY — run tests, confirm this test fails
+3. GREEN  — write minimum code to pass
 4. VERIFY — run tests, confirm it passes
-5. REFACTOR — clean up, tests must still pass
-6. COMMIT — commit with clear message
-7. REPEAT — next acceptance criterion
+5. REFACTOR — clean up, tests still pass
+6. PRE-COMMIT — run pre-commit.md checklist
+7. COMMIT
 ```
 
-⚠️ If a test passes before writing any implementation — stop. The test is wrong. Fix it before continuing.
-
-### Backend Test Commands
+### Backend Commands
 ```bash
-# Run all tests
 cd backend && pytest tests/ -v
-
-# Run specific test file
-cd backend && pytest tests/test_<feature>.py -v
-
-# Run specific test
 cd backend && pytest tests/test_<feature>.py::test_<name> -v
 ```
 
-### Backend Test Pattern — AAA
+### Backend Test Pattern
 ```python
 def test_<behavior>_<expected_result>():
     # Arrange
@@ -56,55 +52,93 @@ def test_<behavior>_<expected_result>():
 
     # Assert
     assert response.status_code == <expected>
-    assert <other assertions>
 ```
+
+⚠️ If test passes before writing implementation — stop. Test is wrong.
 
 ---
 
 ## Frontend Flow — Component First
 
-For React components follow component-first with red-green verification:
-
 ```
-1. BUILD     — create the component, get it rendering correctly
-2. WRITE TEST — write a test that should pass against the real component
-3. FORCE RED  — temporarily break the component or flip an assertion to confirm the test can fail
-4. RESTORE   — fix back to correct implementation
-5. VERIFY GREEN — confirm test passes
-6. REFACTOR  — clean up if needed
-7. COMMIT    — commit with clear message
-8. REPEAT    — next acceptance criterion
+1. READ    — read fe-standards.md before writing any component
+2. BUILD   — create component following fe-standards.md
+3. A11Y    — run through a11y-checklist.md before writing tests
+4. TEST    — write test against the real component
+5. FORCE RED — break something to confirm test can fail
+6. RESTORE — fix back to correct
+7. VERIFY GREEN — confirm test passes
+8. VISUAL VERIFY — output verification instructions, wait for confirmation
+9. PRE-COMMIT — run pre-commit.md checklist
+10. COMMIT
 ```
 
-⚠️ Never skip step 3. If you never see the test fail you don't know if it's actually testing anything.
-
-### Frontend Test Commands
+### Frontend Commands
 ```bash
-# Run all tests
+cd frontend && npm run dev
 cd frontend && npm test
-
-# Run specific test file
 cd frontend && npm test -- src/components/<component>.test.tsx
-
-# Watch mode during development
-cd frontend && npm test -- --watch
 ```
 
-### Frontend Test Pattern — RTL + AAA
+### Frontend Test Pattern
 ```tsx
-it('<behavior description>', async () => {
+it('<behavior>', async () => {
     // Arrange
-    render(<Component prop="value" />)
+    render(<Component />)
 
     // Act
     await userEvent.click(screen.getByRole('button', { name: /search/i }))
 
     // Assert
-    expect(screen.getByText(/results/i)).toBeInTheDocument()
+    expect(await screen.findByText(/results/i)).toBeInTheDocument()
 })
 ```
 
-### Frontend Gotchas
-⚠️ Always mock API calls — never hit real endpoints in tests:
-```tsx
-global.fetch =
+---
+
+## Visual Verification — Required Before Every Commit
+
+Output this and wait for developer confirmation:
+
+```
+VISUAL VERIFICATION REQUIRED
+
+URL: http://localhost:5173/<path>
+
+Expected behavior:
+- [ ] <what user sees>
+- [ ] <what happens on interaction>
+- [ ] <edge case behavior>
+
+Keyboard test:
+- Tab through page — all interactive elements reachable
+- Enter/Space activates buttons
+
+Waiting for your confirmation before committing.
+```
+
+---
+
+## Commit Message Format
+```
+feat: <what was implemented>
+
+- A11y: <accessibility features added>
+- Tests: <what tests verify>
+- Visual: developer confirmed
+```
+
+## When Issue is Complete
+```
+ISSUE COMPLETE
+
+Issue: <title>
+Built: ✅
+A11y checked: ✅
+Tests: <n> added, all passing ✅
+Red-green verified: ✅
+Visual confirmed: ✅
+
+Commit: <message>
+Next issue: <title or NONE>
+```

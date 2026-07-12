@@ -1,59 +1,91 @@
 ---
 name: grill-me
-description: Interview me about a feature before writing any code. Forces requirements alignment before implementation starts.
+description: Interview the developer about a feature before writing any code. Discovers project state first, then conducts UI/UX and feature interviews.
 ---
 
 # Skill: grill-me
 
-Before writing any code, deeply interview the developer about the feature they want to build. The goal is shared understanding — not a plan, not a spec, just certainty that you understand exactly what needs to be built and why.
+Before writing any code, discover what exists then interview the
+developer. Think like a UI/UX designer and product engineer.
 
-## Rules
-- Ask ONE question at a time — never stack multiple questions
-- Wait for the answer before asking the next question
-- Ask follow-up questions when answers are vague
-- Never suggest implementation details during this phase
-- Never write code during this phase
-- Keep asking until you could build the feature without any ambiguity
+## Flow
 
-## Question Areas to Cover
-Work through these areas — not necessarily in this order:
+```
+1. Run discovery.md — report project state
+2. If frontend missing or incomplete — run foundation questions
+3. Run ux-interview.md — visual and interaction requirements
+4. Run feature interview — functional requirements
+5. Output GRILL COMPLETE summary
+```
 
-**What** — what exactly is the feature?
-- What does it do?
-- What does success look like?
+## Step 1 — Discovery
+Read and follow discovery.md in this directory.
+
+## Step 2 — Foundation Check
+If discovery reveals frontend does not exist or is missing core
+infrastructure, ask these before feature questions:
+
+- Do you have a frontend repo started or scaffolding from scratch?
+- Do you have a design direction or should I read CLAUDE.md and propose one?
+- What is the primary device target — desktop, mobile, or both?
+- Is there a brand name or logo to incorporate?
+
+Do NOT skip this if frontend doesn't exist.
+
+## Step 3 — UI/UX Interview
+Read and follow ux-interview.md in this directory.
+
+## Step 4 — Feature Interview
+Ask ONE question at a time. Wait for answer before next.
+
+**What**
+- What exactly does this feature do?
+- What does success look like to the user?
 - What is explicitly out of scope?
 
-**Who** — who uses it?
-- Who is the target user?
+**Who**
+- Who is the target user for this feature?
 - What problem does it solve for them?
 
-**Edge Cases** — what can go wrong?
-- What happens with invalid input?
-- What happens if an external API fails?
-- What are the boundary conditions?
-
-**Data** — what data is involved?
-- What goes in?
+**Data**
+- What data goes in?
 - What comes out?
 - What gets stored?
 
-**Integration** — how does it fit the existing system?
-- Which existing endpoints or components does this touch?
-- Does this require new database tables or columns?
-- Does this require new API endpoints?
+**Edge Cases**
+- What happens with invalid input?
+- What happens if the API fails?
+- What are the boundary conditions?
 
-## When You Are Done
-When you have enough to build without ambiguity, output exactly this:
+**Integration**
+- Which existing endpoints does this consume?
+- Does this require new backend endpoints?
+- Does this require new database tables?
+
+## Rules
+- ONE question at a time — never stack
+- Wait for answer before asking next
+- Never suggest implementation during this phase
+- Never write code during this phase
+- Read CLAUDE.md for project-specific context before starting
+
+## When Done
 
 ```
 GRILL COMPLETE
 
-Summary of what I now understand:
+Project state:
+- Frontend: <exists / needs scaffolding>
+- Foundation needed: <yes / no>
+- Design direction: <from CLAUDE.md or approved proposal>
+
+Feature summary:
 - Feature: <one sentence>
-- User: <who uses it>
+- User: <who>
 - Inputs: <what goes in>
 - Outputs: <what comes out>
-- Edge cases to handle: <list>
+- States: <loading / empty / error / success behaviors>
+- Edge cases: <list>
 - Out of scope: <list>
 
 Ready to run /to-prd
