@@ -122,63 +122,6 @@ PubMed API + Semantic Scholar API + Anthropic API
 
 ---
 
-## Backend Folder Structure
-backend/
-
-├── app/
-
-│   ├── init.py
-
-│   ├── main.py           # FastAPI app, middleware, router registration
-
-│   ├── config.py         # Pydantic settings, reads from .env
-
-│   ├── database.py       # SQLAlchemy engine and session (to be created)
-
-│   ├── routers/          # Route handlers — thin, delegate to services
-
-│   │   ├── init.py
-
-│   │   ├── search.py     # ✅ complete
-
-│   │   └── reading_list.py  # to be created
-
-│   ├── schemas/          # Pydantic request/response models
-
-│   │   ├── init.py
-
-│   │   └── pubmed.py     # ✅ complete
-
-│   ├── services/         # Business logic
-
-│   │   ├── init.py
-
-│   │   └── pubmed.py     # ✅ complete
-
-│   └── models/           # SQLAlchemy database models
-
-│       ├── init.py
-
-│       └── reading_list.py  # to be created
-
-├── tests/
-
-│   ├── init.py
-
-│   ├── test_health.py    # ✅ complete
-
-│   └── test_search.py    # ✅ complete
-
-├── venv/
-
-├── .env                  # never commit
-
-├── .env.example          # commit this
-
-└── requirements.txt
-
----
-
 ## Frontend Folder Structure
 frontend/
 
@@ -319,12 +262,14 @@ VITE_API_URL=http://localhost:8000
 ---
 
 ## Current Priority
+Phase 1 backend is complete. Starting React frontend using vertical slice workflow.
 
-Finish Phase 1 backend:
-1. Set up PostgreSQL database
-2. Create SQLAlchemy database session (database.py)
-3. Create SavedArticle model (models/reading_list.py)
-4. Create reading list schema (schemas/reading_list.py)
-5. Build reading list router (routers/reading_list.py)
-6. Write tests for reading list endpoints
-7. Then start React frontend
+Completed backend:
+- GET /health ✅
+- GET /api/search/ ✅
+- GET /api/search/{pmid} ✅
+- POST /api/reading-list/ ✅
+- GET /api/reading-list/ ✅
+- DELETE /api/reading-list/{pmid} ✅
+
+Next: Run /grill-me to start frontend search UI feature
