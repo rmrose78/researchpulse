@@ -1,0 +1,45 @@
+@use '@/styles/_variables.scss' as *;
+@use '@/styles/_mixins.scss' as *;
+
+.skipLink {
+  position: absolute;
+  top: -3rem;
+  left: 0;
+  z-index: 100;
+  padding: 0.75rem 1.25rem;
+  background: $clinical-blue;
+  color: $white;
+  font-weight: 600;
+  transition: $transition-base;
+
+  &:focus {
+    top: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  padding: 1rem $section-px-mobile;
+  background: $surface;
+  border-bottom: 1px solid $gray-400;
+
+  @include desktop {
+    padding: 1.25rem $section-px-desktop;
+  }
+}
+
+.brand {
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: $navy-text;
+}
+
+.main {
+  @include section-padding;
+}

@@ -1,3 +1,5 @@
+@use '@/styles/_variables.scss' as *;
+
 @mixin desktop {
   @media (min-width: #{$bp-md}) {
     @content;
