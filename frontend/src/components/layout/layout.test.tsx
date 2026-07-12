@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import { axe } from 'jest-axe'
 import Layout from './layout'
 
 describe('Layout', () => {
@@ -38,5 +39,20 @@ describe('Layout', () => {
     expect(header).toContainElement(nav)
     expect(nav).toContainElement(brandLink)
     expect(brandLink).toHaveAttribute('href', '/')
+  })
+
+  it('has no automatically detectable accessibility violations', async () => {
+    // Arrange
+    const { container } = render(
+      <Layout>
+        <p>Page content</p>
+      </Layout>
+    )
+
+    // Act
+    const results = await axe(container)
+
+    // Assert
+    expect(results).toHaveNoViolations()
   })
 })
