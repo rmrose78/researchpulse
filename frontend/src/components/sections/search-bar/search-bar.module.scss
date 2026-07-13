@@ -36,9 +36,19 @@
   font-size: 1rem;
   color: $navy-text;
   background: $surface;
+  box-shadow: 0 1px 2px rgba(10, 22, 40, 0.06);
+  transition: $transition-base;
+
+  &:hover {
+    border-color: $clinical-blue;
+  }
 
   &::placeholder {
     color: $gray-600;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
   }
 }
 
@@ -50,10 +60,12 @@
   font-family: $font-body;
   font-weight: 600;
   font-size: 1rem;
+  box-shadow: 0 2px 8px rgba(45, 125, 210, 0.25);
   transition: $transition-base;
 
   &:hover {
     background: color.adjust($clinical-blue, $lightness: -8%);
+    box-shadow: 0 4px 12px rgba(45, 125, 210, 0.32);
   }
 
   @media (prefers-reduced-motion: reduce) {

@@ -33,8 +33,8 @@
   display: flex;
   align-items: center;
   padding: 1rem $section-px-mobile;
-  background: $surface;
-  border-bottom: 1px solid $gray-400;
+  background: $navy;
+  box-shadow: 0 1px 3px rgba(10, 22, 40, 0.16);
 
   @include desktop {
     padding: 1.25rem $section-px-desktop;
@@ -45,7 +45,16 @@
   font-family: $font-heading;
   font-weight: 700;
   font-size: 1.25rem;
-  color: $navy-text;
+  color: $white;
+  transition: $transition-base;
+
+  &:hover {
+    color: $clinical-blue;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
 }
 
 .main {
@@ -57,10 +66,9 @@
 .footer {
   padding: 1.5rem $section-px-mobile;
   text-align: center;
-  color: $gray-600;
+  color: $gray-400;
   font-size: 0.875rem;
-  border-top: 1px solid $gray-400;
-  background: $surface;
+  background: $navy;
 
   @include desktop {
     padding: 1.5rem $section-px-desktop;
