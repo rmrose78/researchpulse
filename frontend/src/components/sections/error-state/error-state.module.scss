@@ -1,0 +1,45 @@
+@use 'sass:color';
+@use '@/styles/_variables.scss' as *;
+@use '@/styles/_mixins.scss' as *;
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 3rem 1rem;
+  text-align: center;
+}
+
+.message {
+  font-family: $font-body;
+  font-size: 1rem;
+  color: $error;
+  max-width: 32rem;
+}
+
+.retryButton {
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  background: $clinical-blue;
+  color: $white;
+  font-family: $font-body;
+  font-weight: 600;
+  font-size: 1rem;
+  box-shadow: 0 2px 8px rgba(45, 125, 210, 0.25);
+  transition: $transition-base;
+
+  &:hover:not(:disabled) {
+    background: color.adjust($clinical-blue, $lightness: -8%);
+    box-shadow: 0 4px 12px rgba(45, 125, 210, 0.32);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}

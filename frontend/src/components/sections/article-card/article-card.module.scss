@@ -1,0 +1,45 @@
+@use '@/styles/_variables.scss' as *;
+@use '@/styles/_mixins.scss' as *;
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: $surface;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(10, 22, 40, 0.08);
+  transition: $transition-base;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(10, 22, 40, 0.12);
+  }
+
+  @include desktop {
+    padding: 1.5rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+.title {
+  font-family: $font-heading;
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: $navy-text;
+}
+
+.abstract {
+  font-family: $font-body;
+  font-size: 0.95rem;
+  color: $gray-800;
+  line-height: 1.5;
+}
+
+.metadata {
+  font-family: $font-body;
+  font-size: 0.85rem;
+  color: $gray-600;
+}

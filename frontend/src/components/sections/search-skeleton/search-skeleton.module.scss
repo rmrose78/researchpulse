@@ -1,0 +1,70 @@
+@use '@/styles/_variables.scss' as *;
+@use '@/styles/_mixins.scss' as *;
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.visuallyHidden {
+  @include visually-hidden;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: $surface;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(10, 22, 40, 0.08);
+
+  @include desktop {
+    padding: 1.5rem;
+  }
+}
+
+%skeleton-line {
+  height: 0.85rem;
+  border-radius: 4px;
+  background: linear-gradient(90deg, $bg 25%, $gray-400 50%, $bg 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    background: $bg;
+  }
+}
+
+.titleLine {
+  @extend %skeleton-line;
+  width: 70%;
+  height: 1.1rem;
+}
+
+.textLine {
+  @extend %skeleton-line;
+  width: 100%;
+}
+
+.textLineShort {
+  @extend %skeleton-line;
+  width: 60%;
+}
+
+.metaLine {
+  @extend %skeleton-line;
+  width: 40%;
+  margin-top: 0.25rem;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}

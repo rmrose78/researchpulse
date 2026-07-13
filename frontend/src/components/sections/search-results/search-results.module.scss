@@ -1,0 +1,58 @@
+@use '@/styles/_variables.scss' as *;
+@use '@/styles/_mixins.scss' as *;
+
+.section {
+  @include section-padding;
+  max-width: 48rem;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+
+  @include desktop {
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+}
+
+.backButton {
+  align-self: flex-start;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  background: transparent;
+  border: 1px solid $gray-400;
+  color: $navy-text;
+  font-family: $font-body;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: $transition-base;
+
+  &:hover {
+    border-color: $clinical-blue;
+    color: $clinical-blue;
+  }
+
+  @include desktop {
+    order: 2;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+.heading {
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: 1.4rem;
+  color: $navy-text;
+
+  @include desktop {
+    order: 1;
+  }
+}

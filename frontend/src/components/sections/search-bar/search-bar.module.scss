@@ -63,12 +63,24 @@
   box-shadow: 0 2px 8px rgba(45, 125, 210, 0.25);
   transition: $transition-base;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: color.adjust($clinical-blue, $lightness: -8%);
     box-shadow: 0 4px 12px rgba(45, 125, 210, 0.32);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 
   @media (prefers-reduced-motion: reduce) {
     transition: none;
   }
+}
+
+.validationError {
+  font-family: $font-body;
+  font-size: 0.875rem;
+  color: $error;
+  text-align: left;
 }
