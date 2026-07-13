@@ -3,7 +3,15 @@
 Run through every item before committing. Do not commit if any item fails.
 
 ## All Changes
-- [ ] Tests pass — `pytest tests/ -v` (backend) or `npm test` (frontend)
+- [ ] Tests pass — `pytest tests/ -v` (backend)
+- [ ] For frontend changes: run these two checks in parallel (one message,
+      two Task/subagent calls) since they're independent of each other —
+      then merge both results into one pass/fail report before continuing:
+      1. `npm test` (jest + jest-axe, jsdom)
+      2. A live-browser audit via the Playwright MCP tools — load each
+         modified route, capture an accessibility-tree snapshot and
+         console messages (catches real-browser issues jsdom can't, e.g.
+         actual computed contrast, actual focus order)
 - [ ] No console errors or warnings
 - [ ] .env not staged — run `git status` and confirm
 

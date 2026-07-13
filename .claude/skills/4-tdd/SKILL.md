@@ -68,7 +68,7 @@ def test_<behavior>_<expected_result>():
 5. FORCE RED — break something to confirm test can fail
 6. RESTORE — fix back to correct
 7. VERIFY GREEN — confirm test passes
-8. VISUAL VERIFY — output verification instructions, wait for confirmation
+8. VISUAL VERIFY — run through visual-verification.md, wait for confirmation
 9. PRE-COMMIT — run pre-commit.md checklist
 10. COMMIT
 ```
@@ -98,24 +98,10 @@ it('<behavior>', async () => {
 
 ## Visual Verification — Required Before Every Commit
 
-Output this and wait for developer confirmation:
-
-```
-VISUAL VERIFICATION REQUIRED
-
-URL: http://localhost:5173/<path>
-
-Expected behavior:
-- [ ] <what user sees>
-- [ ] <what happens on interaction>
-- [ ] <edge case behavior>
-
-Keyboard test:
-- Tab through page — all interactive elements reachable
-- Enter/Space activates buttons
-
-Waiting for your confirmation before committing.
-```
+Run through `visual-verification.md` in this directory. If a design
+screenshot was provided, it drives an automated screenshot-compare-fix
+loop via the Playwright MCP tools; otherwise it falls back to the manual
+checklist. Either way, end by waiting for developer confirmation.
 
 ---
 

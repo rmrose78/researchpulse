@@ -1,0 +1,37 @@
+@use '@/styles/_variables.scss' as *;
+@use '@/styles/_mixins.scss' as *;
+
+.hero {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 1.25rem;
+  padding: 1.5rem $section-px-mobile;
+
+  @include desktop {
+    padding: 1.5rem $section-px-desktop;
+  }
+}
+
+.heading {
+  font-family: $font-heading;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: $navy-text;
+  max-width: 40rem;
+
+  @include desktop {
+    font-size: 2.5rem;
+  }
+}
+
+.subtitle {
+  font-family: $font-body;
+  font-size: 1.05rem;
+  color: $gray-600;
+  max-width: 34rem;
+  margin-bottom: 0.5rem;
+}
