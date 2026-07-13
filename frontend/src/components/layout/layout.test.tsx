@@ -1,3 +1,4 @@
+import { describe, it, expect } from '@jest/globals'
 import { render, screen } from '@testing-library/react'
 import { axe } from 'jest-axe'
 import Layout from './layout'
@@ -17,7 +18,9 @@ describe('Layout', () => {
 
     // Assert
     expect(screen.getByRole('banner')).toBeInTheDocument()
-    expect(screen.getByRole('navigation', { name: /primary/i })).toBeInTheDocument()
+    expect(
+      screen.getByRole('navigation', { name: /primary/i })
+    ).toBeInTheDocument()
     expect(skipLink).toHaveAttribute('href', `#${main.id}`)
     expect(screen.getByText('Page content')).toBeInTheDocument()
   })
@@ -39,6 +42,21 @@ describe('Layout', () => {
     expect(header).toContainElement(nav)
     expect(nav).toContainElement(brandLink)
     expect(brandLink).toHaveAttribute('href', '/')
+  })
+
+  it('renders a footer landmark with a copyright notice', () => {
+    // Arrange
+    render(
+      <Layout>
+        <p>Page content</p>
+      </Layout>
+    )
+
+    // Act
+    const footer = screen.getByRole('contentinfo')
+
+    // Assert
+    expect(footer).toHaveTextContent(/researchpulse/i)
   })
 
   it('has no automatically detectable accessibility violations', async () => {

@@ -7,7 +7,7 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   return (
-    <>
+    <div className={styles.page}>
       <a href="#main-content" className={styles.skipLink}>
         Skip to main content
       </a>
@@ -21,6 +21,9 @@ export default function Layout({ children }: LayoutProps) {
       <main id="main-content" className={styles.main}>
         {children}
       </main>
-    </>
+      <footer className={styles.footer}>
+        <p>&copy; {new Date().getFullYear()} ResearchPulse</p>
+      </footer>
+    </div>
   )
 }

@@ -1,0 +1,62 @@
+@use 'sass:color';
+@use '@/styles/_variables.scss' as *;
+@use '@/styles/_mixins.scss' as *;
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 32rem;
+}
+
+.label {
+  font-family: $font-body;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: $navy-text;
+  text-align: left;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  @include desktop {
+    flex-direction: row;
+  }
+}
+
+.input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 1px solid $gray-400;
+  border-radius: 0.5rem;
+  font-family: $font-body;
+  font-size: 1rem;
+  color: $navy-text;
+  background: $surface;
+
+  &::placeholder {
+    color: $gray-600;
+  }
+}
+
+.button {
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  background: $clinical-blue;
+  color: $white;
+  font-family: $font-body;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: $transition-base;
+
+  &:hover {
+    background: color.adjust($clinical-blue, $lightness: -8%);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}

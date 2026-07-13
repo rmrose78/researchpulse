@@ -1,19 +1,27 @@
 @use '@/styles/_variables.scss' as *;
 @use '@/styles/_mixins.scss' as *;
 
+.page {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
 .skipLink {
   position: absolute;
-  top: -3rem;
+  top: 0;
   left: 0;
   z-index: 100;
   padding: 0.75rem 1.25rem;
   background: $clinical-blue;
   color: $white;
   font-weight: 600;
+  transform: translateY(-100%);
   transition: $transition-base;
 
   &:focus {
-    top: 0;
+    transform: translateY(0);
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -41,5 +49,20 @@
 }
 
 .main {
-  @include section-padding;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.footer {
+  padding: 1.5rem $section-px-mobile;
+  text-align: center;
+  color: $gray-600;
+  font-size: 0.875rem;
+  border-top: 1px solid $gray-400;
+  background: $surface;
+
+  @include desktop {
+    padding: 1.5rem $section-px-desktop;
+  }
 }

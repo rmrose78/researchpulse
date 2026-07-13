@@ -9,5 +9,5 @@
     "esModuleInterop": true,
     "types": ["vite/client", "jest", "@testing-library/jest-dom", "jest-axe", "node"]
   },
-  "include": ["src"]
+  "include": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/types/jest-globals.d.ts", "jest.config.js"]
 }
