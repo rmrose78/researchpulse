@@ -3,7 +3,9 @@ $bg: #f8fafc;
 $surface: #ffffff;
 $navy: #0a1628;
 $navy-text: #0a1628;
-$clinical-blue: #2d7dd2;
+// Darkened from #2d7dd2 — that value was 4.22:1 against white text, short of
+// WCAG's 4.5:1 minimum for normal-size text (axe-core caught it live-browser).
+$clinical-blue: #2973c1;
 $white: #ffffff;
 $gray-400: #94a3b8;
 $gray-600: #64748b;

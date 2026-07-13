@@ -4,6 +4,9 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { axe } from 'jest-axe'
 import SearchBar from './search-bar'
+import type { SearchFilters } from '@/types'
+
+const noFilters: SearchFilters = { journal: '', date_from: '', date_to: '' }
 
 function ControlledSearchBar({
   onSearch,
@@ -13,7 +16,16 @@ function ControlledSearchBar({
   isLoading?: boolean
 }) {
   const [value, setValue] = useState('')
-  return <SearchBar value={value} onChange={setValue} onSearch={onSearch} isLoading={isLoading} />
+  return (
+    <SearchBar
+      value={value}
+      onChange={setValue}
+      onSearch={onSearch}
+      filters={noFilters}
+      onFiltersChange={jest.fn()}
+      isLoading={isLoading}
+    />
+  )
 }
 
 describe('SearchBar', () => {
@@ -56,7 +68,7 @@ describe('SearchBar', () => {
 
   it('shows the current value passed in from a parent', () => {
     // Arrange & Act
-    render(<SearchBar value="cardiac" onChange={jest.fn()} onSearch={jest.fn()} />)
+    render(<SearchBar value="cardiac" onChange={jest.fn()} onSearch={jest.fn()} filters={noFilters} onFiltersChange={jest.fn()} />)
 
     // Assert
     expect(screen.getByRole('textbox', { name: /search pubmed/i })).toHaveValue('cardiac')
@@ -108,7 +120,7 @@ describe('SearchBar', () => {
 
   it('focuses the input on mount when autoFocus is true', () => {
     // Arrange & Act
-    render(<SearchBar value="cardiac" onChange={jest.fn()} onSearch={jest.fn()} autoFocus />)
+    render(<SearchBar value="cardiac" onChange={jest.fn()} onSearch={jest.fn()} filters={noFilters} onFiltersChange={jest.fn()} autoFocus />)
 
     // Assert
     expect(screen.getByRole('textbox', { name: /search pubmed/i })).toHaveFocus()
@@ -116,7 +128,7 @@ describe('SearchBar', () => {
 
   it('does not focus the input on mount when autoFocus is false', () => {
     // Arrange & Act
-    render(<SearchBar value="" onChange={jest.fn()} onSearch={jest.fn()} />)
+    render(<SearchBar value="" onChange={jest.fn()} onSearch={jest.fn()} filters={noFilters} onFiltersChange={jest.fn()} />)
 
     // Assert
     expect(screen.getByRole('textbox', { name: /search pubmed/i })).not.toHaveFocus()
@@ -124,7 +136,7 @@ describe('SearchBar', () => {
 
   it('disables the search button while isLoading is true', () => {
     // Arrange & Act
-    render(<SearchBar value="cardiac" onChange={jest.fn()} onSearch={jest.fn()} isLoading />)
+    render(<SearchBar value="cardiac" onChange={jest.fn()} onSearch={jest.fn()} filters={noFilters} onFiltersChange={jest.fn()} isLoading />)
 
     // Assert
     expect(screen.getByRole('button', { name: /searching/i })).toBeDisabled()
@@ -132,7 +144,7 @@ describe('SearchBar', () => {
 
   it('has no automatically detectable accessibility violations', async () => {
     // Arrange
-    const { container } = render(<SearchBar value="" onChange={jest.fn()} onSearch={jest.fn()} />)
+    const { container } = render(<SearchBar value="" onChange={jest.fn()} onSearch={jest.fn()} filters={noFilters} onFiltersChange={jest.fn()} />)
 
     // Act
     const results = await axe(container)
@@ -143,7 +155,7 @@ describe('SearchBar', () => {
 
   it('has no automatically detectable accessibility violations while loading', async () => {
     // Arrange
-    const { container } = render(<SearchBar value="cardiac" onChange={jest.fn()} onSearch={jest.fn()} isLoading />)
+    const { container } = render(<SearchBar value="cardiac" onChange={jest.fn()} onSearch={jest.fn()} filters={noFilters} onFiltersChange={jest.fn()} isLoading />)
 
     // Act
     const results = await axe(container)

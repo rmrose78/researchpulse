@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
+import type { SearchFilters as SearchFiltersValue } from '@/types'
+import SearchFilters from './search-filters'
 import styles from './search-bar.module.scss'
 
 interface SearchBarProps {
   value: string
   onChange: (value: string) => void
   onSearch: (query: string) => void
+  filters: SearchFiltersValue
+  onFiltersChange: (filters: SearchFiltersValue) => void
   isLoading?: boolean
   autoFocus?: boolean
 }
@@ -15,6 +19,8 @@ export default function SearchBar({
   value,
   onChange,
   onSearch,
+  filters,
+  onFiltersChange,
   isLoading = false,
   autoFocus = false,
 }: SearchBarProps) {
@@ -66,6 +72,7 @@ export default function SearchBar({
           {validationError}
         </p>
       )}
+      <SearchFilters filters={filters} onChange={onFiltersChange} />
     </form>
   )
 }

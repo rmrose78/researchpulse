@@ -102,6 +102,43 @@ describe('App', () => {
     await waitFor(() => expect(screen.getByText(/no results found for 'zzznotreal'/i)).toBeInTheDocument())
   })
 
+  it('passes filled-in filters through to the search request', async () => {
+    // Arrange
+    mockedSearchArticles.mockResolvedValue(makeResponse([makeArticle()]))
+    render(<App />)
+    await userEvent.click(screen.getByRole('button', { name: /show filters/i }))
+    await userEvent.type(screen.getByLabelText(/journal/i), 'The Lancet')
+    await userEvent.type(screen.getByRole('textbox', { name: /search pubmed/i }), 'cardiac')
+
+    // Act
+    await userEvent.click(screen.getByRole('button', { name: /^search$/i }))
+
+    // Assert
+    await waitFor(() => expect(mockedSearchArticles).toHaveBeenCalledTimes(1))
+    expect(mockedSearchArticles).toHaveBeenCalledWith('cardiac', {
+      journal: 'The Lancet',
+      date_from: '',
+      date_to: '',
+    })
+  })
+
+  it('submitting with no filters set matches unfiltered search behavior', async () => {
+    // Arrange
+    mockedSearchArticles.mockResolvedValue(makeResponse([makeArticle()]))
+    render(<App />)
+
+    // Act
+    await userEvent.type(screen.getByRole('textbox', { name: /search pubmed/i }), 'cardiac{Enter}')
+
+    // Assert
+    await waitFor(() => expect(mockedSearchArticles).toHaveBeenCalledTimes(1))
+    expect(mockedSearchArticles).toHaveBeenCalledWith('cardiac', {
+      journal: '',
+      date_from: '',
+      date_to: '',
+    })
+  })
+
   it('shows an error state on API failure with a working retry', async () => {
     // Arrange
     mockedSearchArticles.mockRejectedValueOnce(new Error('API error: 502'))

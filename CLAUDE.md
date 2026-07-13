@@ -282,7 +282,7 @@ Not playful. Not corporate. Precise and trustworthy.
 Primary palette:
 - Deep navy #0A1628 — primary background, conveys authority
 - Clean white #F8FAFC — content background, breathing room
-- Electric blue #2D7DD2 — primary accent, links, CTAs
+- Electric blue #2973C1 — primary accent, links, CTAs
 - Slate gray #64748B — secondary text, metadata
 - Success green #059669 — positive states
 - Error red #DC2626 — error states

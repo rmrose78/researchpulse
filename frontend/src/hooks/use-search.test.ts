@@ -178,6 +178,87 @@ describe('useSearch', () => {
     expect(mockedSearchArticles).toHaveBeenCalledTimes(2)
   })
 
+  it('re-fetches when filters differ even though the query text is unchanged', async () => {
+    // Arrange
+    mockedSearchArticles.mockResolvedValue(makeResponse([makeArticle()]))
+    const { result } = renderHook(() => useSearch())
+    act(() => {
+      result.current.search('cardiac')
+    })
+    await waitFor(() => expect(result.current.status).toBe('success'))
+
+    // Act
+    act(() => {
+      result.current.setFilters({ journal: 'The Lancet', date_from: '', date_to: '' })
+    })
+    act(() => {
+      result.current.search('cardiac')
+    })
+
+    // Assert
+    await waitFor(() => expect(mockedSearchArticles).toHaveBeenCalledTimes(2))
+    expect(mockedSearchArticles).toHaveBeenLastCalledWith('cardiac', {
+      journal: 'The Lancet',
+      date_from: '',
+      date_to: '',
+    })
+  })
+
+  it('does not re-fetch when both query and filters are unchanged', async () => {
+    // Arrange
+    mockedSearchArticles.mockResolvedValue(makeResponse([makeArticle()]))
+    const { result } = renderHook(() => useSearch())
+    act(() => {
+      result.current.setFilters({ journal: 'The Lancet', date_from: '', date_to: '' })
+    })
+    act(() => {
+      result.current.search('cardiac')
+    })
+    await waitFor(() => expect(result.current.status).toBe('success'))
+    act(() => {
+      result.current.goBack()
+    })
+
+    // Act — same query, same filters
+    act(() => {
+      result.current.search('cardiac')
+    })
+
+    // Assert
+    expect(result.current.view).toBe('results')
+    expect(mockedSearchArticles).toHaveBeenCalledTimes(1)
+  })
+
+  it('retry reuses the filters from the original request, not any since-edited ones', async () => {
+    // Arrange
+    mockedSearchArticles.mockRejectedValue(new Error('API error: 502'))
+    const { result } = renderHook(() => useSearch())
+    act(() => {
+      result.current.setFilters({ journal: 'The Lancet', date_from: '', date_to: '' })
+    })
+    act(() => {
+      result.current.search('cardiac')
+    })
+    await waitFor(() => expect(result.current.status).toBe('error'))
+    mockedSearchArticles.mockResolvedValue(makeResponse([makeArticle()]))
+
+    // Act — edit filters after the failed search, then retry
+    act(() => {
+      result.current.setFilters({ journal: 'A Different Journal', date_from: '', date_to: '' })
+    })
+    act(() => {
+      result.current.retry()
+    })
+
+    // Assert
+    await waitFor(() => expect(result.current.status).toBe('success'))
+    expect(mockedSearchArticles).toHaveBeenLastCalledWith('cardiac', {
+      journal: 'The Lancet',
+      date_from: '',
+      date_to: '',
+    })
+  })
+
   it('discards a stale response when a newer search has superseded it', async () => {
     // Arrange
     let resolveFirst: (value: SearchResponse) => void = () => {}

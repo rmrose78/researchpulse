@@ -5,7 +5,8 @@ import SearchResults from '@/components/sections/search-results/search-results'
 import { useSearch } from '@/hooks/use-search'
 
 function App() {
-  const { query, setQuery, view, status, results, searchedQuery, search, goBack, retry } = useSearch()
+  const { query, setQuery, filters, setFilters, view, status, results, searchedQuery, search, goBack, retry } =
+    useSearch()
 
   return (
     <Layout>
@@ -15,6 +16,8 @@ function App() {
             value={query}
             onChange={setQuery}
             onSearch={search}
+            filters={filters}
+            onFiltersChange={setFilters}
             isLoading={status === 'loading'}
             autoFocus={status !== 'idle'}
           />

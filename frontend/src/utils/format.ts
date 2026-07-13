@@ -8,3 +8,7 @@ export function formatAuthors(authors: string[], max = 3): string {
   if (authors.length <= max) return authors.join(', ')
   return `${authors.slice(0, max).join(', ')}, et al.`
 }
+
+export function toPubMedDate(isoDate: string): string {
+  return isoDate.replaceAll('-', '/')
+}
