@@ -13,3 +13,9 @@ export interface SearchResponse {
   results: ArticleSearchResult[]
   query: string
 }
+
+export interface SearchFilters {
+  journal: string
+  date_from: string
+  date_to: string
+}

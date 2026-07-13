@@ -52,3 +52,19 @@ def test_get_article_invalid_pmid():
     # Assert
     assert response.status_code == 404
 
+def test_search_accepts_journal_and_date_filters():
+    # Arrange
+    params = {
+        "q": "cardiac",
+        "journal": "The Lancet",
+        "date_from": "2020/01/01",
+        "date_to": "2024/12/31",
+    }
+
+    # Act
+    response = client.get("/api/search/", params=params)
+
+    # Assert
+    assert response.status_code == 200
+    assert response.json()["query"] == "cardiac"
+
