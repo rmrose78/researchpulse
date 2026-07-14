@@ -31,15 +31,53 @@
   color: $navy-text;
 }
 
+.abstractWrapper {
+  overflow: hidden;
+}
+
 .abstract {
   font-family: $font-body;
   font-size: 0.95rem;
   color: $gray-800;
   line-height: 1.5;
+
+  &[data-expanded='false'] {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+  }
 }
 
 .metadata {
   font-family: $font-body;
   font-size: 0.85rem;
   color: $gray-600;
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0;
+  border: none;
+  background: transparent;
+  color: $clinical-blue;
+  font-family: $font-body;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $clinical-blue;
+    outline-offset: 2px;
+  }
+}
+
+.chevron {
+  display: inline-flex;
 }

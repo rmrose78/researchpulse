@@ -1,8 +1,8 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals'
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { useSearch } from './use-search'
+import { useSearch, SEARCH_STORAGE_KEY } from './use-search'
 import { searchArticles } from '@/utils/api'
-import type { ArticleSearchResult, SearchResponse } from '@/types'
+import type { ArticleSearchResult, SearchFilters, SearchResponse } from '@/types'
 
 jest.mock('@/utils/api', () => ({
   searchArticles: jest.fn(),
@@ -27,8 +27,13 @@ function makeResponse(results: ArticleSearchResult[], query = 'cardiac'): Search
   return { total: results.length, results, query }
 }
 
+function makeFilters(overrides: Partial<SearchFilters> = {}): SearchFilters {
+  return { journal: '', date_from: '', date_to: '', ...overrides }
+}
+
 beforeEach(() => {
   mockedSearchArticles.mockReset()
+  sessionStorage.clear()
 })
 
 describe('useSearch', () => {
@@ -287,5 +292,133 @@ describe('useSearch', () => {
     // Assert — the stale response must not overwrite the newer one
     expect(result.current.searchedQuery).toBe('diabetes')
     expect(result.current.results[0].pmid).toBe('second')
+  })
+
+  it('restores the last query and filters from sessionStorage on mount', () => {
+    // Arrange
+    sessionStorage.setItem(
+      SEARCH_STORAGE_KEY,
+      JSON.stringify({
+        query: 'cardiac',
+        filters: makeFilters({ journal: 'The Lancet' }),
+        searchedQuery: 'cardiac',
+        searchedFilters: makeFilters({ journal: 'The Lancet' }),
+        results: [makeArticle()],
+        status: 'success',
+      })
+    )
+
+    // Act
+    const { result } = renderHook(() => useSearch())
+
+    // Assert
+    expect(result.current.query).toBe('cardiac')
+    expect(result.current.filters).toEqual(makeFilters({ journal: 'The Lancet' }))
+  })
+
+  it('starts on the search view even when a previous session is restored', () => {
+    // Arrange
+    sessionStorage.setItem(
+      SEARCH_STORAGE_KEY,
+      JSON.stringify({
+        query: 'cardiac',
+        filters: makeFilters(),
+        searchedQuery: 'cardiac',
+        searchedFilters: makeFilters(),
+        results: [makeArticle()],
+        status: 'success',
+      })
+    )
+
+    // Act
+    const { result } = renderHook(() => useSearch())
+
+    // Assert
+    expect(result.current.view).toBe('search')
+  })
+
+  it('does not call the API when resubmitting a query restored from a previous session', () => {
+    // Arrange
+    sessionStorage.setItem(
+      SEARCH_STORAGE_KEY,
+      JSON.stringify({
+        query: 'cardiac',
+        filters: makeFilters(),
+        searchedQuery: 'cardiac',
+        searchedFilters: makeFilters(),
+        results: [makeArticle()],
+        status: 'success',
+      })
+    )
+    const { result } = renderHook(() => useSearch())
+
+    // Act
+    act(() => {
+      result.current.search('cardiac')
+    })
+
+    // Assert
+    expect(result.current.view).toBe('results')
+    expect(result.current.results).toHaveLength(1)
+    expect(mockedSearchArticles).not.toHaveBeenCalled()
+  })
+
+  it('still re-fetches a restored query if the user changes it before resubmitting', async () => {
+    // Arrange
+    sessionStorage.setItem(
+      SEARCH_STORAGE_KEY,
+      JSON.stringify({
+        query: 'cardiac',
+        filters: makeFilters(),
+        searchedQuery: 'cardiac',
+        searchedFilters: makeFilters(),
+        results: [makeArticle()],
+        status: 'success',
+      })
+    )
+    mockedSearchArticles.mockResolvedValue(makeResponse([makeArticle({ pmid: 'new' })], 'diabetes'))
+    const { result } = renderHook(() => useSearch())
+
+    // Act
+    act(() => {
+      result.current.search('diabetes')
+    })
+
+    // Assert
+    await waitFor(() => expect(result.current.status).toBe('success'))
+    expect(mockedSearchArticles).toHaveBeenCalledTimes(1)
+    expect(result.current.results[0].pmid).toBe('new')
+  })
+
+  it('persists query, filters, and a successful search to sessionStorage', async () => {
+    // Arrange
+    mockedSearchArticles.mockResolvedValue(makeResponse([makeArticle()]))
+    const { result } = renderHook(() => useSearch())
+
+    // Act
+    act(() => {
+      result.current.search('cardiac')
+    })
+    await waitFor(() => expect(result.current.status).toBe('success'))
+
+    // Assert
+    const stored = JSON.parse(sessionStorage.getItem(SEARCH_STORAGE_KEY)!)
+    expect(stored.searchedQuery).toBe('cardiac')
+    expect(stored.status).toBe('success')
+    expect(stored.results).toHaveLength(1)
+  })
+
+  it('persists the query as the user types, before any search is submitted', () => {
+    // Arrange
+    const { result } = renderHook(() => useSearch())
+
+    // Act
+    act(() => {
+      result.current.setQuery('cardiac')
+    })
+
+    // Assert
+    const stored = JSON.parse(sessionStorage.getItem(SEARCH_STORAGE_KEY)!)
+    expect(stored.query).toBe('cardiac')
   })
 })

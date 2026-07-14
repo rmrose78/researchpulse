@@ -30,6 +30,7 @@ function makeResponse(results: ArticleSearchResult[], query = 'cardiac'): Search
 
 beforeEach(() => {
   mockedSearchArticles.mockReset()
+  sessionStorage.clear()
 })
 
 describe('App', () => {
