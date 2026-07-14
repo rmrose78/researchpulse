@@ -32,6 +32,6 @@ ONE question at a time. Wait for answer before next.
 - Is there any content that should be truncated with a read more?
 
 ## Design References
-- Read CLAUDE.md Design Direction section before proposing anything
-- If design direction is not in CLAUDE.md — ask developer before proposing
-- Never invent a visual direction without checking CLAUDE.md first
+- Read `docs/reference/design-direction.md` before proposing anything
+- If design direction is not defined there — ask developer before proposing
+- Never invent a visual direction without checking that file first

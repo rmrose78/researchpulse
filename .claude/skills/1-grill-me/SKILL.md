@@ -15,7 +15,8 @@ developer. Think like a UI/UX designer and product engineer.
 2. If frontend missing or incomplete — run foundation questions
 3. Run ux-interview.md — visual and interaction requirements
 4. Run feature interview — functional requirements
-5. Output GRILL COMPLETE summary
+5. Run confidence gate — shared/confidence-gate.md
+6. Output GRILL COMPLETE summary
 ```
 
 ## Step 1 — Discovery
@@ -37,6 +38,12 @@ Read and follow ux-interview.md in this directory.
 
 ## Step 4 — Feature Interview
 Ask ONE question at a time. Wait for answer before next.
+
+## Step 5 — Confidence Gate
+Before producing the GRILL COMPLETE summary, run
+`.claude/skills/shared/confidence-gate.md`. The question it's gating: is
+there enough here that the feature summary has no gaps the developer will
+have to correct later?
 
 **What**
 - What exactly does this feature do?

@@ -100,6 +100,12 @@ Issue 3 → blocked by Issue 1
 Issue 4 → blocked by Issue 2, Issue 3
 ```
 
+## Confidence Gate
+Before producing the ISSUES COMPLETE summary, run
+`.claude/skills/shared/confidence-gate.md`. The question it's gating: is
+there enough here that each issue is a true vertical slice and
+independently completable?
+
 ## When Done
 
 Output exactly this:

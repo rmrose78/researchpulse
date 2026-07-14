@@ -6,6 +6,7 @@ Precondition: dev server running — `cd frontend && npm run dev` (`http://local
 
 ## If a target design screenshot was provided for this component/page
 
+**Round 1 — baseline (real screenshots):**
 1. View the target screenshot.
 2. Use the Playwright MCP tools to navigate to the relevant route and capture
    screenshots at:
@@ -14,24 +15,37 @@ Precondition: dev server running — `cd frontend && npm run dev` (`http://local
 
    (mobile-first, matching this project's breakpoint convention)
 3. Compare the rendered screenshots against both the target image and
-   CLAUDE.md's Design Direction section:
-   - Palette — navy `#0A1628`, white `#F8FAFC`, electric blue `#2D7DD2`,
-     slate `#64748B`, success/error greens/reds
-   - Typography — Inter, heading 600–700, body 400
-   - Spacing — 4px base scale (4, 8, 12, 16, 24, 32, 48, 64)
-   - Radius — 6–8px on cards
-   - Shadows — subtle, not flat/heavy
-   - Transitions — 150–200ms ease on hover/interactive states
-
-   "Modern sleek" is graded against these concrete tokens, not vibes.
+   `docs/reference/design-direction.md` (palette, typography, spacing,
+   radius, shadows, transitions). "Modern sleek" is graded against these
+   concrete tokens, not vibes.
 4. Score confidence 0–100%. If under 95%, list concrete gaps, e.g.:
    `spacing is 12px, should be 16px per the spacing scale`
-   `accent color is #3B82F6, should be #2D7DD2`
-5. Fix the code, re-screenshot, re-compare. Cap at 5 iterations. If still
-   under 95% after 5 rounds, stop looping — report the remaining gaps to
-   the developer instead of continuing indefinitely.
-6. Capture console messages during each pass (feeds the pre-commit
-   "no console errors or warnings" item).
+   `accent color is #3B82F6, should be #2973C1 per design-direction.md`
+
+**Rounds 2–4 — fix-verify iterations (cheap checks, no screenshots):**
+5. Fix the code. Instead of re-screenshotting, use:
+   - `browser_evaluate` to read the actual computed styles (padding, color,
+     border-radius, font-weight) as plain values — diff those numbers/strings
+     directly against `docs/reference/design-direction.md` tokens
+   - `browser_snapshot` (accessibility tree) to check structure, contrast
+     issues, and landmark/focus order
+
+   This catches the same gaps as a visual re-inspection at a fraction of the
+   token cost — image tokens only get spent when there's something to look
+   at that text can't answer (actual layout/composition), not on re-checking
+   values you can read directly.
+6. Re-score confidence from the computed-style diff. Cap at 5 total
+   iterations (including round 1). If still under 95% after 5 rounds, stop
+   looping — report the remaining gaps to the developer instead of
+   continuing indefinitely.
+
+**Final round — confirmation (real screenshots again):**
+7. Once the computed-style diff clears 95%, take one more real screenshot
+   pair (mobile + desktop) — this is the image the developer actually
+   reviews, so it must reflect the real render, not just computed values.
+8. Capture console messages during each pass (feeds the pre-commit
+   "no console errors or warnings" item — this is captured here, not
+   re-captured in pre-commit.md).
 
 ## If no target screenshot was supplied
 

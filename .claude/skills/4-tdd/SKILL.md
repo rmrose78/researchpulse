@@ -18,6 +18,14 @@ issue until the current one is visually verified and all tests green.
 - Never commit without developer visual confirmation
 - Never commit without running pre-commit.md checklist
 - Act as UI/UX engineer — produce modern, accessible, polished UI
+  - When no visual direction is specified beyond
+    `docs/reference/design-direction.md`, default to a modern, accessible,
+    clinically-credible execution of the existing tokens — don't ask
+    permission to apply the established design system
+  - If a genuinely distinctive idea occurs to you (an interaction, layout,
+    or animation flourish not implied by fe-standards.md or the design
+    tokens), pause and describe it to the developer as a proposal before
+    building it — don't silently build it, and don't silently skip it either
 - Developer is product manager — flag design decisions for approval
 - Never auto-commit — always show visual verification instructions first
 
@@ -27,18 +35,24 @@ issue until the current one is visually verified and all tests green.
 
 ```
 1. RED    — write failing test for ONE criterion
-2. VERIFY — run tests, confirm this test fails
+2. VERIFY — run ONLY the targeted test, confirm this test fails
 3. GREEN  — write minimum code to pass
-4. VERIFY — run tests, confirm it passes
-5. REFACTOR — clean up, tests still pass
-6. PRE-COMMIT — run pre-commit.md checklist
-7. COMMIT
+4. VERIFY — run ONLY the targeted test, confirm it passes
+5. REFACTOR — clean up, targeted test still passes
+6. PRE-COMMIT — run the full suite once, then the pre-commit.md checklist
+7. CONFIDENCE GATE — shared/confidence-gate.md: confident the implementation
+   matches the issue's acceptance criteria?
+8. COMMIT
 ```
+
+Run the full `pytest tests/ -v` suite only at step 6, before commit — not
+on every RED/GREEN iteration. During the loop itself, run just the one
+test file/function you're working on (see Backend Commands below).
 
 ### Backend Commands
 ```bash
-cd backend && pytest tests/ -v
 cd backend && pytest tests/test_<feature>.py::test_<name> -v
+cd backend && pytest tests/ -v
 ```
 
 ### Backend Test Pattern
@@ -70,7 +84,10 @@ def test_<behavior>_<expected_result>():
 7. VERIFY GREEN — confirm test passes
 8. VISUAL VERIFY — run through visual-verification.md, wait for confirmation
 9. PRE-COMMIT — run pre-commit.md checklist
-10. COMMIT
+10. CONFIDENCE GATE — shared/confidence-gate.md: confident the implementation
+    matches the issue's acceptance criteria? (visual case is already covered
+    by visual-verification.md; this catches non-visual gaps)
+11. COMMIT
 ```
 
 ### Frontend Commands

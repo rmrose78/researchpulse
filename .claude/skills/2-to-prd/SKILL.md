@@ -66,6 +66,11 @@ Mobile behavior: <how layout changes>
 Any unresolved decisions needing input.
 ```
 
+## Confidence Gate
+Before producing the PRD COMPLETE summary, run
+`.claude/skills/shared/confidence-gate.md`. The question it's gating: is
+there enough here that the PRD captures the interview with nothing invented?
+
 ## When Done
 
 ```

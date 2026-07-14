@@ -10,11 +10,12 @@ Run through every item before committing. Do not commit if any item fails.
       1. `npm run build` (catches TypeScript errors `npm test` won't —
          e.g. stray/stale files with outdated prop types)
       2. `npm test` (jest + jest-axe, jsdom)
-      3. A live-browser audit via the Playwright MCP tools — load each
-         modified route, capture an accessibility-tree snapshot and
-         console messages (catches real-browser issues jsdom can't, e.g.
-         actual computed contrast, actual focus order)
-- [ ] No console errors or warnings
+- [ ] visual-verification.md already ran earlier in the tdd flow (step 8) —
+      don't re-run a Playwright browser audit here, it's the same routes,
+      same accessibility-tree snapshot, and same console messages already
+      captured there
+- [ ] No console errors or warnings (from the console messages captured
+      during visual-verification.md)
 - [ ] .env not staged — run `git status` and confirm
 
 ## Backend Only
