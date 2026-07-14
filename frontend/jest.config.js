@@ -1,6 +1,7 @@
 export default {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
+  setupFiles: ['<rootDir>/src/test-setup.ts'],
   setupFilesAfterEnv: ['@testing-library/jest-dom/jest-globals', 'jest-axe/extend-expect'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',

@@ -1,16 +1,23 @@
 import { describe, it, expect } from '@jest/globals'
 import { render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { axe } from 'jest-axe'
 import Layout from './layout'
+
+function renderLayout(initialEntry = '/') {
+  return render(
+    <MemoryRouter initialEntries={[initialEntry]}>
+      <Layout>
+        <p>Page content</p>
+      </Layout>
+    </MemoryRouter>
+  )
+}
 
 describe('Layout', () => {
   it('renders nav and main landmarks with a working skip link', () => {
     // Arrange
-    render(
-      <Layout>
-        <p>Page content</p>
-      </Layout>
-    )
+    renderLayout()
 
     // Act
     const skipLink = screen.getByRole('link', { name: /skip to main content/i })
@@ -27,11 +34,7 @@ describe('Layout', () => {
 
   it('nav is wrapped in a header landmark, and the brand links home', () => {
     // Arrange
-    render(
-      <Layout>
-        <p>Page content</p>
-      </Layout>
-    )
+    renderLayout()
 
     // Act
     const header = screen.getByRole('banner')
@@ -44,13 +47,37 @@ describe('Layout', () => {
     expect(brandLink).toHaveAttribute('href', '/')
   })
 
+  it('renders nav links to trending and reading list, with the brand also covering home', () => {
+    // Arrange
+    renderLayout()
+
+    // Act & Assert
+    expect(screen.getByRole('link', { name: /^trending$/i })).toHaveAttribute('href', '/')
+    expect(screen.getByRole('link', { name: /^reading list$/i })).toHaveAttribute(
+      'href',
+      '/reading-list'
+    )
+    expect(screen.queryByRole('link', { name: /^search$/i })).not.toBeInTheDocument()
+  })
+
+  it('marks the brand and the trending link as active via aria-current on the merged trending/search route, and no others', () => {
+    // Arrange
+    renderLayout('/')
+
+    // Act
+    const brandLink = screen.getByRole('link', { name: /researchpulse home/i })
+    const trendingLink = screen.getByRole('link', { name: /^trending$/i })
+    const readingListLink = screen.getByRole('link', { name: /^reading list$/i })
+
+    // Assert
+    expect(brandLink).toHaveAttribute('aria-current', 'page')
+    expect(trendingLink).toHaveAttribute('aria-current', 'page')
+    expect(readingListLink).not.toHaveAttribute('aria-current')
+  })
+
   it('renders a footer landmark with a copyright notice', () => {
     // Arrange
-    render(
-      <Layout>
-        <p>Page content</p>
-      </Layout>
-    )
+    renderLayout()
 
     // Act
     const footer = screen.getByRole('contentinfo')
@@ -61,11 +88,7 @@ describe('Layout', () => {
 
   it('has no automatically detectable accessibility violations', async () => {
     // Arrange
-    const { container } = render(
-      <Layout>
-        <p>Page content</p>
-      </Layout>
-    )
+    const { container } = renderLayout()
 
     // Act
     const results = await axe(container)

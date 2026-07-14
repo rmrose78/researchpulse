@@ -51,15 +51,16 @@ Mobile behavior: Not specifically discussed in the interview — follow the resp
 ## Scope
 
 ### In Scope
-- New `/trending` route: specialty selector (Cardiology, Oncology/Cancer, Infectious Disease, Neurology, Alzheimer's & Dementia, Public Health & Policy) + mode tabs (Trending, Most Cited, New & Notable)
+- Trending owns the `/` landing route (it's the differentiator — the developer decided it should be visible on page load rather than behind a click); specialty selector (Cardiology, Oncology/Cancer, Infectious Disease, Neurology, Alzheimer's & Dementia, Public Health & Policy) + mode tabs (Trending, Most Cited, New & Notable). Search is merged into the same `/` page rather than a separate route — Trending shows by default, and a "Search PubMed" toggle reveals the search form in place.
 - Backend: `GET /api/trending/` endpoint, PubMed pool query per specialty (MeSH-scoped, hybrid MeSH+keyword for New & Notable to beat indexing lag), Semantic Scholar **batch** citation lookup, cached ranking with stale-while-revalidate + per-key single-flight lock
 - Trending pool for the Trending mode bounded to articles published in the last 180 days; velocity = `citations / (age_days + 14)`
 - 0-citation articles excluded from Trending/Most Cited, included in New & Notable
 - Minimum-results fallback so a specialty/mode never renders empty on a technicality
 - Rank-movement badges via an insert-only snapshot table (not overwritten each refresh)
 - New `/reading-list` route consuming the existing (Phase 1) reading-list endpoints, plus live re-fetch of citation counts for saved articles
+- Existing search flow merged into the `/` landing page behind an in-page "Search PubMed" toggle, behavior otherwise unchanged
 - Save/remove toggle added to `ArticleCard`, usable from both Search and Trending
-- `react-router` added to the frontend for the two new routes
+- `react-router` added to the frontend for the two routes (`/`, `/reading-list`)
 - Prerequisite backend fix: reading-list router converted to async + logic moved to a service (per CLAUDE.md conventions); fix the import-time-evaluated `saved_at` default in `models/reading_list.py` that currently gives every saved article the same timestamp
 - Sticky specialty/mode selection persisted in localStorage
 

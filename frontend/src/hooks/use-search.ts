@@ -3,7 +3,7 @@ import { searchArticles } from '@/utils/api'
 import { readStorage, writeStorage } from '@/utils/storage'
 import type { ArticleSearchResult, SearchFilters } from '@/types'
 
-export type SearchView = 'search' | 'results'
+export type SearchView = 'trending' | 'search' | 'results'
 export type SearchStatus = 'idle' | 'loading' | 'success' | 'empty' | 'error'
 
 export const SEARCH_STORAGE_KEY = 'researchpulse:search'
@@ -13,6 +13,7 @@ const EMPTY_FILTERS: SearchFilters = { journal: '', date_from: '', date_to: '' }
 interface PersistedSearch {
   query: string
   filters: SearchFilters
+  view: SearchView
   searchedQuery: string
   searchedFilters: SearchFilters
   results: ArticleSearchResult[]
@@ -31,6 +32,7 @@ interface UseSearchResult {
   searchedQuery: string
   search: (query: string) => void
   goBack: () => void
+  expandSearch: () => void
   retry: () => void
   total: number
   hasMore: boolean
@@ -56,7 +58,7 @@ export function useSearch(): UseSearchResult {
 
   const [query, setQuery] = useState(persisted?.query ?? '')
   const [filters, setFilters] = useState<SearchFilters>(persisted?.filters ?? EMPTY_FILTERS)
-  const [view, setView] = useState<SearchView>('search')
+  const [view, setView] = useState<SearchView>(persisted?.view ?? 'trending')
   const [status, setStatus] = useState<SearchStatus>(persisted?.status ?? 'idle')
   const [results, setResults] = useState<ArticleSearchResult[]>(persisted?.results ?? [])
   const [searchedQuery, setSearchedQuery] = useState(persisted?.searchedQuery ?? '')
@@ -69,18 +71,22 @@ export function useSearch(): UseSearchResult {
 
   // Skip persisting transient states — a refresh mid-request or right after a
   // failure should fall back to the last known-good cache, not overwrite it.
+  // `view` is persisted verbatim (not derived from status) so a refresh or
+  // route remount lands exactly where the user left off — on the input
+  // screen if that's what they were looking at, on results otherwise.
   useEffect(() => {
     if (status === 'loading' || status === 'error') return
     writeStorage<PersistedSearch>(SEARCH_STORAGE_KEY, {
       query,
       filters,
+      view,
       searchedQuery,
       searchedFilters,
       results,
       status,
       total,
     })
-  }, [query, filters, searchedQuery, searchedFilters, results, status, total])
+  }, [query, filters, view, searchedQuery, searchedFilters, results, status, total])
 
   // Bumped on every fetch; a resolving/rejecting request only applies its
   // outcome if it's still the latest one, so a superseded (stale) response
@@ -155,6 +161,10 @@ export function useSearch(): UseSearchResult {
   }, [runFetch, searchedQuery, searchedFilters])
 
   const goBack = useCallback(() => {
+    setView('trending')
+  }, [])
+
+  const expandSearch = useCallback(() => {
     setView('search')
   }, [])
 
@@ -169,6 +179,7 @@ export function useSearch(): UseSearchResult {
     searchedQuery,
     search,
     goBack,
+    expandSearch,
     retry,
     total,
     hasMore: results.length < total,

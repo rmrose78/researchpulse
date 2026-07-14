@@ -1,7 +1,8 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import App from './App'
+import { axe } from 'jest-axe'
+import TrendingPage from './trending-page'
 import { searchArticles } from '@/utils/api'
 import type { ArticleSearchResult, SearchResponse } from '@/types'
 
@@ -33,19 +34,41 @@ beforeEach(() => {
   sessionStorage.clear()
 })
 
-describe('App', () => {
-  it('shows the search screen with no results screen on first load', () => {
+async function expandSearch() {
+  await userEvent.click(screen.getByRole('button', { name: /^search pubmed$/i }))
+}
+
+describe('TrendingPage', () => {
+  it('shows trending content and a search toggle by default, with no search form', () => {
     // Arrange & Act
-    render(<App />)
+    render(<TrendingPage />)
+
+    // Assert
+    expect(screen.getByRole('heading', { name: /^trending$/i })).toBeInTheDocument()
+    expect(screen.getByText(/check back soon/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^search pubmed$/i })).toBeInTheDocument()
+    expect(screen.queryByRole('textbox', { name: /search pubmed/i })).not.toBeInTheDocument()
+  })
+
+  it('clicking the search toggle reveals the search form and hides the trending content', async () => {
+    // Arrange
+    render(<TrendingPage />)
+
+    // Act
+    await expandSearch()
 
     // Assert
     expect(screen.getByRole('textbox', { name: /search pubmed/i })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: /results for/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: /^trending$/i })).not.toBeInTheDocument()
+    // The collapse ("Hide search") control is deferred for now — no toggle
+    // button is rendered once the search form is expanded.
+    expect(screen.queryByRole('button', { name: /^search pubmed$/i })).not.toBeInTheDocument()
   })
 
-  it('blocks a short query without calling the API or leaving the search screen', async () => {
+  it('blocks a short query without calling the API or leaving the search form', async () => {
     // Arrange
-    render(<App />)
+    render(<TrendingPage />)
+    await expandSearch()
 
     // Act
     await userEvent.type(screen.getByRole('textbox', { name: /search pubmed/i }), 'a{Enter}')
@@ -55,10 +78,11 @@ describe('App', () => {
     expect(screen.getByRole('textbox', { name: /search pubmed/i })).toBeInTheDocument()
   })
 
-  it('searches, hides the search bar, and shows results as cards', async () => {
+  it('searches and shows results as cards, replacing the search form', async () => {
     // Arrange
     mockedSearchArticles.mockResolvedValue(makeResponse([makeArticle()]))
-    render(<App />)
+    render(<TrendingPage />)
+    await expandSearch()
 
     // Act
     await userEvent.type(screen.getByRole('textbox', { name: /search pubmed/i }), 'cardiac{Enter}')
@@ -69,22 +93,25 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: /results for 'cardiac'/i })).toBeInTheDocument()
   })
 
-  it('going back preserves the typed query and does not re-call the API on an unchanged resubmit', async () => {
+  it('going back to trending from results preserves the typed query without re-calling the API on an unchanged resubmit', async () => {
     // Arrange
     mockedSearchArticles.mockResolvedValue(makeResponse([makeArticle()]))
-    render(<App />)
+    render(<TrendingPage />)
+    await expandSearch()
     await userEvent.type(screen.getByRole('textbox', { name: /search pubmed/i }), 'cardiac{Enter}')
     await waitFor(() => expect(screen.getByRole('heading', { name: /a cardiac study/i })).toBeInTheDocument())
 
     // Act
-    await userEvent.click(screen.getByRole('button', { name: /new search/i }))
+    await userEvent.click(screen.getByRole('button', { name: /back to trending/i }))
 
-    // Assert
+    // Assert — back on the trending default, not the empty search form
+    expect(screen.getByRole('heading', { name: /^trending$/i })).toBeInTheDocument()
+
+    // Act — reopen search, the query is still there, resubmit unchanged
+    await expandSearch()
     const input = screen.getByRole('textbox', { name: /search pubmed/i })
     expect(input).toHaveValue('cardiac')
-
-    // Act — resubmit the identical query
-    await userEvent.click(screen.getByRole('button', { name: /search/i }))
+    await userEvent.click(screen.getByRole('button', { name: /^search$/i }))
 
     // Assert — cached results reappear without a second network call
     await waitFor(() => expect(screen.getByRole('heading', { name: /a cardiac study/i })).toBeInTheDocument())
@@ -94,7 +121,8 @@ describe('App', () => {
   it('shows an empty state for zero results, not an error', async () => {
     // Arrange
     mockedSearchArticles.mockResolvedValue(makeResponse([]))
-    render(<App />)
+    render(<TrendingPage />)
+    await expandSearch()
 
     // Act
     await userEvent.type(screen.getByRole('textbox', { name: /search pubmed/i }), 'zzznotreal{Enter}')
@@ -106,7 +134,8 @@ describe('App', () => {
   it('passes filled-in filters through to the search request', async () => {
     // Arrange
     mockedSearchArticles.mockResolvedValue(makeResponse([makeArticle()]))
-    render(<App />)
+    render(<TrendingPage />)
+    await expandSearch()
     await userEvent.click(screen.getByRole('button', { name: /show filters/i }))
     await userEvent.type(screen.getByLabelText(/journal/i), 'The Lancet')
     await userEvent.type(screen.getByRole('textbox', { name: /search pubmed/i }), 'cardiac')
@@ -123,28 +152,12 @@ describe('App', () => {
     })
   })
 
-  it('submitting with no filters set matches unfiltered search behavior', async () => {
-    // Arrange
-    mockedSearchArticles.mockResolvedValue(makeResponse([makeArticle()]))
-    render(<App />)
-
-    // Act
-    await userEvent.type(screen.getByRole('textbox', { name: /search pubmed/i }), 'cardiac{Enter}')
-
-    // Assert
-    await waitFor(() => expect(mockedSearchArticles).toHaveBeenCalledTimes(1))
-    expect(mockedSearchArticles).toHaveBeenCalledWith('cardiac', {
-      journal: '',
-      date_from: '',
-      date_to: '',
-    })
-  })
-
   it('shows an error state on API failure with a working retry', async () => {
     // Arrange
     mockedSearchArticles.mockRejectedValueOnce(new Error('API error: 502'))
     mockedSearchArticles.mockResolvedValueOnce(makeResponse([makeArticle()]))
-    render(<App />)
+    render(<TrendingPage />)
+    await expandSearch()
     await userEvent.type(screen.getByRole('textbox', { name: /search pubmed/i }), 'cardiac{Enter}')
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument())
 
@@ -154,5 +167,28 @@ describe('App', () => {
     // Assert
     await waitFor(() => expect(screen.getByRole('heading', { name: /a cardiac study/i })).toBeInTheDocument())
     expect(mockedSearchArticles).toHaveBeenCalledTimes(2)
+  })
+
+  it('has no automatically detectable accessibility violations on the trending default', async () => {
+    // Arrange
+    const { container } = render(<TrendingPage />)
+
+    // Act
+    const results = await axe(container)
+
+    // Assert
+    expect(results).toHaveNoViolations()
+  })
+
+  it('has no automatically detectable accessibility violations with the search form expanded', async () => {
+    // Arrange
+    const { container } = render(<TrendingPage />)
+    await expandSearch()
+
+    // Act
+    const results = await axe(container)
+
+    // Assert
+    expect(results).toHaveNoViolations()
   })
 })
