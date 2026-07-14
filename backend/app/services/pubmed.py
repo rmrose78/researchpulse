@@ -31,8 +31,9 @@ class PubMedService:
         self,
         query: str,
         max_results: int = 20,
+        offset: int = 0,
         date_from: str | None = None,
-        date_to: str | None = None, 
+        date_to: str | None = None,
         journal: str | None = None,
     ) -> SearchResponse:
         # Build the query string
@@ -52,6 +53,7 @@ class PubMedService:
                     "db": "pubmed",
                     "term": full_query,
                     "retmax": max_results,
+                    "retstart": offset,
                     "usehistory": "y",
                 }
             )

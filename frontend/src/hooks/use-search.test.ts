@@ -23,8 +23,12 @@ function makeArticle(overrides: Partial<ArticleSearchResult> = {}): ArticleSearc
   }
 }
 
-function makeResponse(results: ArticleSearchResult[], query = 'cardiac'): SearchResponse {
-  return { total: results.length, results, query }
+function makeResponse(
+  results: ArticleSearchResult[],
+  query = 'cardiac',
+  total = results.length
+): SearchResponse {
+  return { total, results, query }
 }
 
 function makeFilters(overrides: Partial<SearchFilters> = {}): SearchFilters {
@@ -420,5 +424,209 @@ describe('useSearch', () => {
     // Assert
     const stored = JSON.parse(sessionStorage.getItem(SEARCH_STORAGE_KEY)!)
     expect(stored.query).toBe('cardiac')
+  })
+
+  describe('loadMore', () => {
+    it('exposes total and hasMore after an initial search', async () => {
+      // Arrange
+      mockedSearchArticles.mockResolvedValue(makeResponse([makeArticle()], 'cardiac', 40))
+      const { result } = renderHook(() => useSearch())
+
+      // Act
+      act(() => {
+        result.current.search('cardiac')
+      })
+      await waitFor(() => expect(result.current.status).toBe('success'))
+
+      // Assert
+      expect(result.current.total).toBe(40)
+      expect(result.current.hasMore).toBe(true)
+    })
+
+    it('appends the next batch to existing results and updates total', async () => {
+      // Arrange
+      const first = makeArticle({ pmid: '1' })
+      const second = makeArticle({ pmid: '2' })
+      mockedSearchArticles.mockResolvedValueOnce(makeResponse([first], 'cardiac', 2))
+      const { result } = renderHook(() => useSearch())
+      act(() => {
+        result.current.search('cardiac')
+      })
+      await waitFor(() => expect(result.current.status).toBe('success'))
+      mockedSearchArticles.mockResolvedValueOnce(makeResponse([second], 'cardiac', 2))
+
+      // Act
+      act(() => {
+        result.current.loadMore()
+      })
+      await waitFor(() => expect(result.current.isLoadingMore).toBe(false))
+
+      // Assert
+      expect(result.current.results.map((a) => a.pmid)).toEqual(['1', '2'])
+      expect(result.current.total).toBe(2)
+      expect(result.current.hasMore).toBe(false)
+      expect(mockedSearchArticles).toHaveBeenLastCalledWith(
+        'cardiac',
+        { journal: '', date_from: '', date_to: '' },
+        1
+      )
+    })
+
+    it('sets isLoadingMore while the next batch is in flight', async () => {
+      // Arrange
+      mockedSearchArticles.mockResolvedValueOnce(makeResponse([makeArticle()], 'cardiac', 2))
+      const { result } = renderHook(() => useSearch())
+      act(() => {
+        result.current.search('cardiac')
+      })
+      await waitFor(() => expect(result.current.status).toBe('success'))
+
+      let resolveNext: (value: SearchResponse) => void = () => {}
+      mockedSearchArticles.mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveNext = resolve
+        })
+      )
+
+      // Act
+      act(() => {
+        result.current.loadMore()
+      })
+
+      // Assert
+      expect(result.current.isLoadingMore).toBe(true)
+      await act(async () => {
+        resolveNext(makeResponse([makeArticle({ pmid: 'second' })], 'cardiac', 2))
+      })
+      expect(result.current.isLoadingMore).toBe(false)
+    })
+
+    it('does not fetch again once all results are loaded', async () => {
+      // Arrange
+      mockedSearchArticles.mockResolvedValue(makeResponse([makeArticle()], 'cardiac', 1))
+      const { result } = renderHook(() => useSearch())
+      act(() => {
+        result.current.search('cardiac')
+      })
+      await waitFor(() => expect(result.current.status).toBe('success'))
+      expect(result.current.hasMore).toBe(false)
+
+      // Act
+      act(() => {
+        result.current.loadMore()
+      })
+
+      // Assert
+      expect(mockedSearchArticles).toHaveBeenCalledTimes(1)
+    })
+
+    it('keeps existing results and sets loadMoreError when the next batch fails', async () => {
+      // Arrange
+      mockedSearchArticles.mockResolvedValueOnce(makeResponse([makeArticle()], 'cardiac', 2))
+      const { result } = renderHook(() => useSearch())
+      act(() => {
+        result.current.search('cardiac')
+      })
+      await waitFor(() => expect(result.current.status).toBe('success'))
+      mockedSearchArticles.mockRejectedValueOnce(new Error('API error: 502'))
+
+      // Act
+      act(() => {
+        result.current.loadMore()
+      })
+      await waitFor(() => expect(result.current.isLoadingMore).toBe(false))
+
+      // Assert
+      expect(result.current.loadMoreError).toBeTruthy()
+      expect(result.current.results).toHaveLength(1)
+    })
+
+    it('clears a prior loadMoreError on the next successful attempt', async () => {
+      // Arrange
+      mockedSearchArticles.mockResolvedValueOnce(makeResponse([makeArticle()], 'cardiac', 2))
+      const { result } = renderHook(() => useSearch())
+      act(() => {
+        result.current.search('cardiac')
+      })
+      await waitFor(() => expect(result.current.status).toBe('success'))
+      mockedSearchArticles.mockRejectedValueOnce(new Error('API error: 502'))
+      act(() => {
+        result.current.loadMore()
+      })
+      await waitFor(() => expect(result.current.loadMoreError).toBeTruthy())
+      mockedSearchArticles.mockResolvedValueOnce(makeResponse([makeArticle({ pmid: 'second' })], 'cardiac', 2))
+
+      // Act
+      act(() => {
+        result.current.loadMore()
+      })
+      await waitFor(() => expect(result.current.isLoadingMore).toBe(false))
+
+      // Assert
+      expect(result.current.loadMoreError).toBeNull()
+      expect(result.current.results).toHaveLength(2)
+    })
+
+    it('discards a stale loadMore response superseded by a new search', async () => {
+      // Arrange
+      mockedSearchArticles.mockResolvedValueOnce(makeResponse([makeArticle({ pmid: '1' })], 'cardiac', 2))
+      const { result } = renderHook(() => useSearch())
+      act(() => {
+        result.current.search('cardiac')
+      })
+      await waitFor(() => expect(result.current.status).toBe('success'))
+
+      let resolveLoadMore: (value: SearchResponse) => void = () => {}
+      mockedSearchArticles.mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveLoadMore = resolve
+        })
+      )
+      act(() => {
+        result.current.loadMore()
+      })
+
+      mockedSearchArticles.mockResolvedValueOnce(
+        makeResponse([makeArticle({ pmid: 'new' })], 'diabetes', 1)
+      )
+
+      // Act — a brand new search supersedes the in-flight loadMore
+      act(() => {
+        result.current.search('diabetes')
+      })
+      await waitFor(() => expect(result.current.status).toBe('success'))
+      expect(result.current.searchedQuery).toBe('diabetes')
+
+      act(() => {
+        resolveLoadMore(makeResponse([makeArticle({ pmid: 'stale' })], 'cardiac', 2))
+      })
+
+      // Assert
+      expect(result.current.searchedQuery).toBe('diabetes')
+      expect(result.current.results.map((a) => a.pmid)).toEqual(['new'])
+    })
+
+    it('persists the full accumulated results and total across a simulated reload', async () => {
+      // Arrange
+      mockedSearchArticles.mockResolvedValueOnce(makeResponse([makeArticle({ pmid: '1' })], 'cardiac', 2))
+      const { result } = renderHook(() => useSearch())
+      act(() => {
+        result.current.search('cardiac')
+      })
+      await waitFor(() => expect(result.current.status).toBe('success'))
+      mockedSearchArticles.mockResolvedValueOnce(makeResponse([makeArticle({ pmid: '2' })], 'cardiac', 2))
+      act(() => {
+        result.current.loadMore()
+      })
+      await waitFor(() => expect(result.current.isLoadingMore).toBe(false))
+
+      // Act — simulate a reload by mounting a fresh hook instance
+      const { result: reloaded } = renderHook(() => useSearch())
+
+      // Assert
+      expect(reloaded.current.results.map((a) => a.pmid)).toEqual(['1', '2'])
+      expect(reloaded.current.total).toBe(2)
+      expect(reloaded.current.hasMore).toBe(false)
+    })
   })
 })

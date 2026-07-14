@@ -5,6 +5,7 @@ import ArticleList from '../article-list/article-list'
 import SearchSkeleton from '../search-skeleton/search-skeleton'
 import EmptyState from '../empty-state/empty-state'
 import ErrorState from '../error-state/error-state'
+import LoadMore from '../load-more/load-more'
 import styles from './search-results.module.scss'
 
 interface SearchResultsProps {
@@ -13,9 +14,25 @@ interface SearchResultsProps {
   query: string
   onBack: () => void
   onRetry: () => void
+  total: number
+  hasMore: boolean
+  isLoadingMore: boolean
+  loadMoreError: string | null
+  onLoadMore: () => void
 }
 
-export default function SearchResults({ status, results, query, onBack, onRetry }: SearchResultsProps) {
+export default function SearchResults({
+  status,
+  results,
+  query,
+  onBack,
+  onRetry,
+  total,
+  hasMore,
+  isLoadingMore,
+  loadMoreError,
+  onLoadMore,
+}: SearchResultsProps) {
   const headingRef = useRef<HTMLHeadingElement>(null)
 
   useEffect(() => {
@@ -38,6 +55,16 @@ export default function SearchResults({ status, results, query, onBack, onRetry 
         {status === 'empty' && <EmptyState query={query} />}
         {status === 'error' && <ErrorState onRetry={onRetry} />}
       </div>
+      {status === 'success' && (
+        <LoadMore
+          total={total}
+          loadedCount={results.length}
+          hasMore={hasMore}
+          isLoading={isLoadingMore}
+          error={loadMoreError}
+          onLoadMore={onLoadMore}
+        />
+      )}
     </section>
   )
 }

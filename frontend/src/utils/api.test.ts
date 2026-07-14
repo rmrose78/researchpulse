@@ -1,4 +1,4 @@
-import { searchArticles } from './api'
+import { searchArticles, PAGE_SIZE } from './api'
 import type { SearchFilters } from '@/types'
 
 jest.mock('./env', () => ({ API_BASE_URL: 'http://localhost:8000' }))
@@ -69,5 +69,38 @@ describe('searchArticles', () => {
     const params = calledParams()
     expect(params.get('date_from')).toBe('2024/01/01')
     expect(params.has('date_to')).toBe(false)
+  })
+
+  it('always sends max_results as the fixed page size', async () => {
+    // Arrange
+    mockFetchOnce()
+
+    // Act
+    await searchArticles('cardiac', noFilters)
+
+    // Assert
+    expect(calledParams().get('max_results')).toBe(String(PAGE_SIZE))
+  })
+
+  it('defaults offset to 0 when not provided', async () => {
+    // Arrange
+    mockFetchOnce()
+
+    // Act
+    await searchArticles('cardiac', noFilters)
+
+    // Assert
+    expect(calledParams().get('offset')).toBe('0')
+  })
+
+  it('sends the given offset when provided', async () => {
+    // Arrange
+    mockFetchOnce()
+
+    // Act
+    await searchArticles('cardiac', noFilters, 20)
+
+    // Assert
+    expect(calledParams().get('offset')).toBe('20')
   })
 })

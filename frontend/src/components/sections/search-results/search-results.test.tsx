@@ -18,11 +18,26 @@ function makeArticle(overrides: Partial<ArticleSearchResult> = {}): ArticleSearc
   }
 }
 
+const loadMoreDefaults = {
+  total: 1,
+  hasMore: false,
+  isLoadingMore: false,
+  loadMoreError: null,
+  onLoadMore: jest.fn(),
+}
+
 describe('SearchResults', () => {
   it('shows a heading with the searched query', () => {
     // Arrange & Act
     render(
-      <SearchResults status="success" results={[makeArticle()]} query="cardiac" onBack={jest.fn()} onRetry={jest.fn()} />
+      <SearchResults
+        status="success"
+        results={[makeArticle()]}
+        query="cardiac"
+        onBack={jest.fn()}
+        onRetry={jest.fn()}
+        {...loadMoreDefaults}
+      />
     )
 
     // Assert
@@ -32,7 +47,14 @@ describe('SearchResults', () => {
   it('moves focus to the heading on mount', async () => {
     // Arrange & Act
     render(
-      <SearchResults status="success" results={[makeArticle()]} query="cardiac" onBack={jest.fn()} onRetry={jest.fn()} />
+      <SearchResults
+        status="success"
+        results={[makeArticle()]}
+        query="cardiac"
+        onBack={jest.fn()}
+        onRetry={jest.fn()}
+        {...loadMoreDefaults}
+      />
     )
 
     // Assert
@@ -44,7 +66,16 @@ describe('SearchResults', () => {
   it('calls onBack when the back button is clicked', async () => {
     // Arrange
     const onBack = jest.fn()
-    render(<SearchResults status="success" results={[]} query="cardiac" onBack={onBack} onRetry={jest.fn()} />)
+    render(
+      <SearchResults
+        status="success"
+        results={[]}
+        query="cardiac"
+        onBack={onBack}
+        onRetry={jest.fn()}
+        {...loadMoreDefaults}
+      />
+    )
 
     // Act
     await userEvent.click(screen.getByRole('button', { name: /new search/i }))
@@ -55,7 +86,16 @@ describe('SearchResults', () => {
 
   it('renders a skeleton while loading', () => {
     // Arrange & Act
-    render(<SearchResults status="loading" results={[]} query="cardiac" onBack={jest.fn()} onRetry={jest.fn()} />)
+    render(
+      <SearchResults
+        status="loading"
+        results={[]}
+        query="cardiac"
+        onBack={jest.fn()}
+        onRetry={jest.fn()}
+        {...loadMoreDefaults}
+      />
+    )
 
     // Assert
     expect(screen.getByRole('status')).toHaveTextContent(/loading results/i)
@@ -70,6 +110,7 @@ describe('SearchResults', () => {
         query="cardiac"
         onBack={jest.fn()}
         onRetry={jest.fn()}
+        {...loadMoreDefaults}
       />
     )
 
@@ -79,7 +120,16 @@ describe('SearchResults', () => {
 
   it('renders the empty state with the query on empty', () => {
     // Arrange & Act
-    render(<SearchResults status="empty" results={[]} query="zzznotreal" onBack={jest.fn()} onRetry={jest.fn()} />)
+    render(
+      <SearchResults
+        status="empty"
+        results={[]}
+        query="zzznotreal"
+        onBack={jest.fn()}
+        onRetry={jest.fn()}
+        {...loadMoreDefaults}
+      />
+    )
 
     // Assert
     expect(screen.getByText(/no results found for 'zzznotreal'/i)).toBeInTheDocument()
@@ -88,7 +138,16 @@ describe('SearchResults', () => {
   it('renders the error state and wires retry on error', async () => {
     // Arrange
     const onRetry = jest.fn()
-    render(<SearchResults status="error" results={[]} query="cardiac" onBack={jest.fn()} onRetry={onRetry} />)
+    render(
+      <SearchResults
+        status="error"
+        results={[]}
+        query="cardiac"
+        onBack={jest.fn()}
+        onRetry={onRetry}
+        {...loadMoreDefaults}
+      />
+    )
 
     // Act
     await userEvent.click(screen.getByRole('button', { name: /retry/i }))
@@ -103,7 +162,14 @@ describe('SearchResults', () => {
 
     for (const status of statuses) {
       const { container, unmount } = render(
-        <SearchResults status={status} results={[makeArticle()]} query="cardiac" onBack={jest.fn()} onRetry={jest.fn()} />
+        <SearchResults
+          status={status}
+          results={[makeArticle()]}
+          query="cardiac"
+          onBack={jest.fn()}
+          onRetry={jest.fn()}
+          {...loadMoreDefaults}
+        />
       )
 
       // Act
@@ -113,5 +179,68 @@ describe('SearchResults', () => {
       expect(results).toHaveNoViolations()
       unmount()
     }
+  })
+
+  it('shows the Load more footer on success when more results are available', () => {
+    // Arrange & Act
+    render(
+      <SearchResults
+        status="success"
+        results={[makeArticle()]}
+        query="cardiac"
+        onBack={jest.fn()}
+        onRetry={jest.fn()}
+        {...loadMoreDefaults}
+        total={40}
+        hasMore
+      />
+    )
+
+    // Assert
+    expect(screen.getByText('Showing 1 of 40 results')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /load more/i })).toBeInTheDocument()
+  })
+
+  it('calls onLoadMore when the Load more button is clicked', async () => {
+    // Arrange
+    const onLoadMore = jest.fn()
+    render(
+      <SearchResults
+        status="success"
+        results={[makeArticle()]}
+        query="cardiac"
+        onBack={jest.fn()}
+        onRetry={jest.fn()}
+        {...loadMoreDefaults}
+        total={40}
+        hasMore
+        onLoadMore={onLoadMore}
+      />
+    )
+
+    // Act
+    await userEvent.click(screen.getByRole('button', { name: /load more/i }))
+
+    // Assert
+    expect(onLoadMore).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not show the Load more footer on non-success statuses', () => {
+    // Arrange & Act
+    render(
+      <SearchResults
+        status="loading"
+        results={[]}
+        query="cardiac"
+        onBack={jest.fn()}
+        onRetry={jest.fn()}
+        {...loadMoreDefaults}
+        total={40}
+        hasMore
+      />
+    )
+
+    // Assert
+    expect(screen.queryByRole('button', { name: /load more/i })).not.toBeInTheDocument()
   })
 })

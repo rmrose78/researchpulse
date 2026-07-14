@@ -10,6 +10,7 @@ router = APIRouter(prefix='/api/search', tags=["search"])
 async def search_articles(
     q: str = Query(..., min_length=2, description="Search query"),
     max_results: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0, description="Offset for pagination"),
     date_from: str | None = Query(None, description="YYYY/MM/DD"),
     date_to: str | None = Query(None, descripton="YYYY/MM/DD"),
     journal: str | None = Query(None),
@@ -18,6 +19,7 @@ async def search_articles(
         return await pubmed_service.search(
             query=q,
             max_results=max_results,
+            offset=offset,
             date_from=date_from,
             date_to=date_to,
             journal=journal,

@@ -52,6 +52,32 @@ def test_get_article_invalid_pmid():
     # Assert
     assert response.status_code == 404
 
+def test_search_offset_returns_a_different_batch():
+    # Arrange
+    params_first_page = {"q": "cardiac", "max_results": 5, "offset": 0}
+    params_second_page = {"q": "cardiac", "max_results": 5, "offset": 5}
+
+    # Act
+    first_page = client.get("/api/search/", params=params_first_page).json()
+    second_page = client.get("/api/search/", params=params_second_page).json()
+
+    # Assert
+    first_pmids = {r["pmid"] for r in first_page["results"]}
+    second_pmids = {r["pmid"] for r in second_page["results"]}
+    assert first_pmids.isdisjoint(second_pmids)
+
+
+def test_search_rejects_negative_offset():
+    # Arrange
+    params = {"q": "cardiac", "offset": -1}
+
+    # Act
+    response = client.get("/api/search/", params=params)
+
+    # Assert
+    assert response.status_code == 422
+
+
 def test_search_accepts_journal_and_date_filters():
     # Arrange
     params = {
