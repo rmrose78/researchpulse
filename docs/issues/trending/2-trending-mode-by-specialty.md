@@ -1,7 +1,7 @@
 # Issue 2: Trending — Citation-Velocity Rankings by Specialty
 
 ## What
-The core differentiator: a `/trending` page where a user picks a clinical specialty and sees biomedical articles ranked by citation velocity, backed by cached Semantic Scholar data.
+The core differentiator: the `/` landing page where a user picks a clinical specialty and sees biomedical articles ranked by citation velocity, backed by cached Semantic Scholar data.
 
 ## Why
 This is what makes ResearchPulse different from a plain PubMed search — a credible, specialty-relevant signal for what's gaining traction, not just a keyword match.
@@ -23,7 +23,7 @@ This is what makes ResearchPulse different from a plain PubMed search — a cred
 ## Layers Touched
 - [ ] Database — new `trending_snapshots` table: one row **inserted** per (specialty, mode, computed_at) — never overwritten, so later issues can diff against prior snapshots
 - [ ] Backend — new `GET /api/trending/` endpoint, new Semantic Scholar service (batch client), new trending ranking service (PubMed pool query + velocity calc + cache read/write + single-flight lock), shared `httpx.AsyncClient` via FastAPI lifespan (fixes the current per-request client creation in `pubmed.py`, needed since trending adds a second external API client)
-- [ ] Frontend — `/trending` page (route from Issue 0), specialty selector, `useTrending` hook mirroring `use-search`, `ArticleCard` extended with a `citationStat` prop
+- [ ] Frontend — `/` page (route from Issue 0), specialty selector, `useTrending` hook mirroring `use-search`, `ArticleCard` extended with a `citationStat` prop
 
 ## Edge Cases
 - Semantic Scholar API failure/rate limit during a refresh → serve last good cached snapshot with its freshness stamp, never a hard error page
@@ -31,7 +31,7 @@ This is what makes ResearchPulse different from a plain PubMed search — a cred
 - PubMed returns duplicate or malformed entries in the pool → excluded from ranking rather than crashing the computation
 
 ## Blocked By
-Issue 0 (routing foundation — needs the `/trending` route to exist)
+Issue 0 (routing foundation — needs the `/` route to exist and to already render the Trending placeholder)
 
 ## Definition of Done
 - [ ] Tests written and passing

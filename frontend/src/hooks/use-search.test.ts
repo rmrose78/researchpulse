@@ -41,14 +41,27 @@ beforeEach(() => {
 })
 
 describe('useSearch', () => {
-  it('starts idle on the search screen', () => {
+  it('starts idle on the trending screen', () => {
     // Arrange & Act
     const { result } = renderHook(() => useSearch())
 
     // Assert
-    expect(result.current.view).toBe('search')
+    expect(result.current.view).toBe('trending')
     expect(result.current.status).toBe('idle')
     expect(result.current.results).toEqual([])
+  })
+
+  it('expandSearch moves from the trending view to the search view', () => {
+    // Arrange
+    const { result } = renderHook(() => useSearch())
+
+    // Act
+    act(() => {
+      result.current.expandSearch()
+    })
+
+    // Assert
+    expect(result.current.view).toBe('search')
   })
 
   it('goes to loading then success on a search with results', async () => {
@@ -109,7 +122,7 @@ describe('useSearch', () => {
     act(() => {
       result.current.goBack()
     })
-    expect(result.current.view).toBe('search')
+    expect(result.current.view).toBe('trending')
 
     // Act
     act(() => {
@@ -160,7 +173,7 @@ describe('useSearch', () => {
     })
 
     // Assert
-    expect(result.current.view).toBe('search')
+    expect(result.current.view).toBe('trending')
     expect(result.current.status).toBe('success')
     expect(result.current.results).toHaveLength(1)
     expect(result.current.searchedQuery).toBe('cardiac')
@@ -320,13 +333,14 @@ describe('useSearch', () => {
     expect(result.current.filters).toEqual(makeFilters({ journal: 'The Lancet' }))
   })
 
-  it('starts on the search view even when a previous session is restored', () => {
+  it('restores the results view on mount when that is what was persisted', () => {
     // Arrange
     sessionStorage.setItem(
       SEARCH_STORAGE_KEY,
       JSON.stringify({
         query: 'cardiac',
         filters: makeFilters(),
+        view: 'results',
         searchedQuery: 'cardiac',
         searchedFilters: makeFilters(),
         results: [makeArticle()],
@@ -337,8 +351,45 @@ describe('useSearch', () => {
     // Act
     const { result } = renderHook(() => useSearch())
 
-    // Assert
+    // Assert — a fresh mount (e.g. navigating back to this route, or a hard
+    // refresh) must not drop the user back to the empty Hero screen when
+    // they were looking at results
+    expect(result.current.view).toBe('results')
+  })
+
+  it('restores the search (input) view on mount even with a successful result set cached', () => {
+    // Arrange — simulates a user who expanded the search dropdown (without
+    // submitting a new query), then refreshed or navigated away and back
+    sessionStorage.setItem(
+      SEARCH_STORAGE_KEY,
+      JSON.stringify({
+        query: 'cardiac',
+        filters: makeFilters(),
+        view: 'search',
+        searchedQuery: 'cardiac',
+        searchedFilters: makeFilters(),
+        results: [makeArticle()],
+        status: 'success',
+      })
+    )
+
+    // Act
+    const { result } = renderHook(() => useSearch())
+
+    // Assert — the persisted view must win, not an assumption derived from
+    // status; a cached result set existing doesn't mean the user was
+    // looking at it
     expect(result.current.view).toBe('search')
+    expect(result.current.status).toBe('success')
+    expect(result.current.results).toHaveLength(1)
+  })
+
+  it('starts on the trending view when no previous session is restored', () => {
+    // Arrange & Act
+    const { result } = renderHook(() => useSearch())
+
+    // Assert
+    expect(result.current.view).toBe('trending')
   })
 
   it('does not call the API when resubmitting a query restored from a previous session', () => {

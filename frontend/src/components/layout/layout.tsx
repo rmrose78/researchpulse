@@ -1,8 +1,13 @@
 import type { ReactNode } from 'react'
+import { NavLink } from 'react-router-dom'
 import styles from './layout.module.scss'
 
 interface LayoutProps {
   children: ReactNode
+}
+
+function navLinkClassName({ isActive }: { isActive: boolean }): string {
+  return isActive ? `${styles.navLink} ${styles.navLinkActive}` : styles.navLink
 }
 
 export default function Layout({ children }: LayoutProps) {
@@ -13,9 +18,21 @@ export default function Layout({ children }: LayoutProps) {
       </a>
       <header>
         <nav className={styles.nav} aria-label="Primary">
-          <a href="/" className={styles.brand} aria-label="ResearchPulse home">
+          <NavLink to="/" end className={styles.brand} aria-label="ResearchPulse home">
             ResearchPulse
-          </a>
+          </NavLink>
+          <ul className={styles.navLinks}>
+            <li>
+              <NavLink to="/" end className={navLinkClassName}>
+                Trending
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/reading-list" className={navLinkClassName}>
+                Reading List
+              </NavLink>
+            </li>
+          </ul>
         </nav>
       </header>
       <main id="main-content" className={styles.main}>

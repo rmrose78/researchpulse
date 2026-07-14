@@ -15,8 +15,14 @@ issue until the current one is visually verified and all tests green.
 
 ## Rules
 - ONE issue per session
-- Never commit without developer visual confirmation
-- Never commit without running pre-commit.md checklist
+- **Never run `git commit` (or stage/commit anything) in this skill, period.**
+  Visual confirmation and a passing pre-commit checklist mean the change is
+  *ready* to commit, not that it should be committed. Only commit if the
+  developer explicitly says so in this session — always end the completion
+  report with a "ready for visual check and commit" status instead of
+  committing
+- Never commit without running pre-commit.md checklist (once the developer
+  does ask for a commit)
 - Act as UI/UX engineer — produce modern, accessible, polished UI
   - When no visual direction is specified beyond
     `docs/reference/design-direction.md`, default to a modern, accessible,
@@ -27,7 +33,13 @@ issue until the current one is visually verified and all tests green.
     tokens), pause and describe it to the developer as a proposal before
     building it — don't silently build it, and don't silently skip it either
 - Developer is product manager — flag design decisions for approval
-- Never auto-commit — always show visual verification instructions first
+- The full completion report in "When Issue is Complete" below is posted
+  **once per issue** — when the developer is satisfied and the issue is
+  actually done. A bug found mid-stream (during the developer's own visual
+  check, a follow-up fix, a scope change) does not get its own report —
+  keep working, then fold everything (original criteria, what got added,
+  what got fixed) into the one final report. Outside of that final report,
+  just say what you did in a sentence or two and move on
 
 ---
 
@@ -42,7 +54,8 @@ issue until the current one is visually verified and all tests green.
 6. PRE-COMMIT — run the full suite once, then the pre-commit.md checklist
 7. CONFIDENCE GATE — shared/confidence-gate.md: confident the implementation
    matches the issue's acceptance criteria?
-8. COMMIT
+8. REPORT — output the completion report below and stop. Do not run
+   `git commit` — that only happens if the developer explicitly asks.
 ```
 
 Run the full `pytest tests/ -v` suite only at step 6, before commit — not
@@ -87,7 +100,8 @@ def test_<behavior>_<expected_result>():
 10. CONFIDENCE GATE — shared/confidence-gate.md: confident the implementation
     matches the issue's acceptance criteria? (visual case is already covered
     by visual-verification.md; this catches non-visual gaps)
-11. COMMIT
+11. REPORT — output the completion report below and stop. Do not run
+    `git commit` — that only happens if the developer explicitly asks.
 ```
 
 ### Frontend Commands
@@ -122,7 +136,10 @@ checklist. Either way, end by waiting for developer confirmation.
 
 ---
 
-## Commit Message Format
+## Suggested Commit Message Format
+
+This is a suggestion to include in the completion report, not something to
+execute — commits happen only when the developer explicitly asks.
 ```
 feat: <what was implemented>
 
@@ -132,6 +149,21 @@ feat: <what was implemented>
 ```
 
 ## When Issue is Complete
+
+Post this once, when the issue is actually done — not after every
+intermediate fix along the way. If the developer finds a bug or asks for a
+change mid-stream, just fix it and briefly say what changed; save the full
+report for the end.
+
+Before reporting, reconcile scope: if any acceptance criteria were added,
+changed, or dropped mid-build (developer feedback, a bug found during
+visual verification, a design decision that expanded scope, etc.), update
+the issue's markdown file (`docs/issues/<feature>/<n>-<slug>.md`) *and* the
+corresponding GitHub issue (`gh issue edit`) so the source of truth matches
+what was actually built — never let the report describe scope the issue
+file doesn't reflect.
+
+Then output:
 ```
 ISSUE COMPLETE
 
@@ -142,6 +174,24 @@ Tests: <n> added, all passing ✅
 Red-green verified: ✅
 Visual confirmed: ✅
 
-Commit: <message>
+Acceptance criteria — original (from the issue as first read):
+- [x] <criterion that was met>
+- [ ] <criterion NOT met — say why, don't drop it silently>
+
+Acceptance criteria — added during this build:
+- <criterion that emerged mid-build, wasn't in the original issue>
+  — why: <one-line reason — developer feedback, bug found, scope
+  discovered during implementation, etc.>
+(state "None — stayed within original scope" if nothing changed)
+
+QA / Product verification checklist:
+- [ ] <concrete, testable thing a non-engineer can check in the browser —
+  one line per meaningfully distinct behavior or state this issue changed>
+
+Suggested commit message:
+<message>
+
+Status: ready for visual check and commit — I have not committed anything.
+Let me know when to commit, or commit it yourself.
 Next issue: <title or NONE>
 ```
