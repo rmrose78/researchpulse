@@ -1,11 +1,23 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { searchArticles } from '@/utils/api'
+import { readStorage, writeStorage } from '@/utils/storage'
 import type { ArticleSearchResult, SearchFilters } from '@/types'
 
 export type SearchView = 'search' | 'results'
 export type SearchStatus = 'idle' | 'loading' | 'success' | 'empty' | 'error'
 
+export const SEARCH_STORAGE_KEY = 'researchpulse:search'
+
 const EMPTY_FILTERS: SearchFilters = { journal: '', date_from: '', date_to: '' }
+
+interface PersistedSearch {
+  query: string
+  filters: SearchFilters
+  searchedQuery: string
+  searchedFilters: SearchFilters
+  results: ArticleSearchResult[]
+  status: SearchStatus
+}
 
 interface UseSearchResult {
   query: string
@@ -34,14 +46,31 @@ function filtersEqual(a: SearchFilters, b: SearchFilters): boolean {
 }
 
 export function useSearch(): UseSearchResult {
-  const [query, setQuery] = useState('')
-  const [filters, setFilters] = useState<SearchFilters>(EMPTY_FILTERS)
+  const [persisted] = useState(() => readStorage<PersistedSearch>(SEARCH_STORAGE_KEY))
+
+  const [query, setQuery] = useState(persisted?.query ?? '')
+  const [filters, setFilters] = useState<SearchFilters>(persisted?.filters ?? EMPTY_FILTERS)
   const [view, setView] = useState<SearchView>('search')
-  const [status, setStatus] = useState<SearchStatus>('idle')
-  const [results, setResults] = useState<ArticleSearchResult[]>([])
-  const [searchedQuery, setSearchedQuery] = useState('')
-  const [searchedFilters, setSearchedFilters] =
-    useState<SearchFilters>(EMPTY_FILTERS)
+  const [status, setStatus] = useState<SearchStatus>(persisted?.status ?? 'idle')
+  const [results, setResults] = useState<ArticleSearchResult[]>(persisted?.results ?? [])
+  const [searchedQuery, setSearchedQuery] = useState(persisted?.searchedQuery ?? '')
+  const [searchedFilters, setSearchedFilters] = useState<SearchFilters>(
+    persisted?.searchedFilters ?? EMPTY_FILTERS
+  )
+
+  // Skip persisting transient states — a refresh mid-request or right after a
+  // failure should fall back to the last known-good cache, not overwrite it.
+  useEffect(() => {
+    if (status === 'loading' || status === 'error') return
+    writeStorage<PersistedSearch>(SEARCH_STORAGE_KEY, {
+      query,
+      filters,
+      searchedQuery,
+      searchedFilters,
+      results,
+      status,
+    })
+  }, [query, filters, searchedQuery, searchedFilters, results, status])
 
   // Bumped on every fetch; a resolving/rejecting request only applies its
   // outcome if it's still the latest one, so a superseded (stale) response

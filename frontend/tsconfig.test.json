@@ -3,11 +3,12 @@
   "compilerOptions": {
     "composite": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.test.tsbuildinfo",
-    "module": "commonjs",
+    "module": "esnext",
     "moduleResolution": "node",
     "verbatimModuleSyntax": false,
     "esModuleInterop": true,
     "types": ["vite/client", "jest", "@testing-library/jest-dom", "jest-axe", "node"]
   },
-  "include": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/types/jest-globals.d.ts", "jest.config.js"]
+  "include": ["src", "jest.config.js"],
+  "exclude": []
 }
