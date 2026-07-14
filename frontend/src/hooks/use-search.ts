@@ -17,6 +17,7 @@ interface PersistedSearch {
   searchedFilters: SearchFilters
   results: ArticleSearchResult[]
   status: SearchStatus
+  total: number
 }
 
 interface UseSearchResult {
@@ -31,6 +32,11 @@ interface UseSearchResult {
   search: (query: string) => void
   goBack: () => void
   retry: () => void
+  total: number
+  hasMore: boolean
+  isLoadingMore: boolean
+  loadMoreError: string | null
+  loadMore: () => void
 }
 
 function normalize(query: string): string {
@@ -57,6 +63,9 @@ export function useSearch(): UseSearchResult {
   const [searchedFilters, setSearchedFilters] = useState<SearchFilters>(
     persisted?.searchedFilters ?? EMPTY_FILTERS
   )
+  const [total, setTotal] = useState(persisted?.total ?? 0)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null)
 
   // Skip persisting transient states — a refresh mid-request or right after a
   // failure should fall back to the last known-good cache, not overwrite it.
@@ -69,8 +78,9 @@ export function useSearch(): UseSearchResult {
       searchedFilters,
       results,
       status,
+      total,
     })
-  }, [query, filters, searchedQuery, searchedFilters, results, status])
+  }, [query, filters, searchedQuery, searchedFilters, results, status, total])
 
   // Bumped on every fetch; a resolving/rejecting request only applies its
   // outcome if it's still the latest one, so a superseded (stale) response
@@ -84,11 +94,14 @@ export function useSearch(): UseSearchResult {
       setSearchedFilters(activeFilters)
       setStatus('loading')
       setView('results')
+      setIsLoadingMore(false)
+      setLoadMoreError(null)
 
       searchArticles(rawQuery, activeFilters)
         .then((response) => {
           if (requestIdRef.current !== requestId) return
           setResults(response.results)
+          setTotal(response.total)
           setStatus(response.results.length === 0 ? 'empty' : 'success')
         })
         .catch(() => {
@@ -98,6 +111,27 @@ export function useSearch(): UseSearchResult {
     },
     []
   )
+
+  const loadMore = useCallback(() => {
+    if (isLoadingMore || results.length >= total) return
+
+    const requestId = ++requestIdRef.current
+    setIsLoadingMore(true)
+    setLoadMoreError(null)
+
+    searchArticles(searchedQuery, searchedFilters, results.length)
+      .then((response) => {
+        if (requestIdRef.current !== requestId) return
+        setResults((prev) => [...prev, ...response.results])
+        setTotal(response.total)
+        setIsLoadingMore(false)
+      })
+      .catch(() => {
+        if (requestIdRef.current !== requestId) return
+        setLoadMoreError("Couldn't reach PubMed to load more results — this may be a temporary rate limit.")
+        setIsLoadingMore(false)
+      })
+  }, [isLoadingMore, results.length, total, searchedQuery, searchedFilters])
 
   const search = useCallback(
     (rawQuery: string) => {
@@ -136,5 +170,10 @@ export function useSearch(): UseSearchResult {
     search,
     goBack,
     retry,
+    total,
+    hasMore: results.length < total,
+    isLoadingMore,
+    loadMoreError,
+    loadMore,
   }
 }

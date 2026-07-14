@@ -23,6 +23,15 @@ async def _search_and_capture_term(**search_kwargs) -> str:
     return mock_get.call_args.kwargs["params"]["term"]
 
 
+async def _search_and_capture_params(**search_kwargs) -> dict:
+    service = PubMedService()
+    with patch.object(
+        service, "_get_with_retry", new=AsyncMock(return_value=_empty_esearch_response())
+    ) as mock_get:
+        await service.search(**search_kwargs)
+    return mock_get.call_args.kwargs["params"]
+
+
 @pytest.mark.asyncio
 async def test_search_appends_journal_filter_to_term():
     # Arrange / Act
@@ -50,6 +59,24 @@ async def test_search_ignores_single_sided_date_range():
 
     # Assert
     assert term == "cardiac"
+
+
+@pytest.mark.asyncio
+async def test_search_passes_offset_as_retstart():
+    # Arrange / Act
+    params = await _search_and_capture_params(query="cardiac", offset=20)
+
+    # Assert
+    assert params["retstart"] == 20
+
+
+@pytest.mark.asyncio
+async def test_search_defaults_offset_to_zero():
+    # Arrange / Act
+    params = await _search_and_capture_params(query="cardiac")
+
+    # Assert
+    assert params["retstart"] == 0
 
 
 @pytest.mark.asyncio

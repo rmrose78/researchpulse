@@ -5,8 +5,24 @@ import SearchResults from '@/components/sections/search-results/search-results'
 import { useSearch } from '@/hooks/use-search'
 
 function App() {
-  const { query, setQuery, filters, setFilters, view, status, results, searchedQuery, search, goBack, retry } =
-    useSearch()
+  const {
+    query,
+    setQuery,
+    filters,
+    setFilters,
+    view,
+    status,
+    results,
+    searchedQuery,
+    search,
+    goBack,
+    retry,
+    total,
+    hasMore,
+    isLoadingMore,
+    loadMoreError,
+    loadMore,
+  } = useSearch()
 
   return (
     <Layout>
@@ -29,6 +45,11 @@ function App() {
           query={searchedQuery}
           onBack={goBack}
           onRetry={retry}
+          total={total}
+          hasMore={hasMore}
+          isLoadingMore={isLoadingMore}
+          loadMoreError={loadMoreError}
+          onLoadMore={loadMore}
         />
       )}
     </Layout>

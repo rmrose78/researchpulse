@@ -1,0 +1,95 @@
+@use 'sass:color';
+@use '@/styles/_variables.scss' as *;
+@use '@/styles/_mixins.scss' as *;
+
+.footer {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+.liveRegion {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  text-align: center;
+}
+
+.progress {
+  font-family: $font-body;
+  font-size: 0.875rem;
+  color: $gray-600;
+}
+
+.loadMoreButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  background: $clinical-blue;
+  color: $white;
+  font-family: $font-body;
+  font-weight: 600;
+  font-size: 1rem;
+  box-shadow: 0 2px 8px rgba(45, 125, 210, 0.25);
+  transition: $transition-base;
+
+  &:hover:not(:disabled) {
+    background: color.adjust($clinical-blue, $lightness: -8%);
+    box-shadow: 0 4px 12px rgba(45, 125, 210, 0.32);
+  }
+
+  &:disabled {
+    opacity: 0.8;
+    cursor: not-allowed;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+.spinner {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: $white;
+  animation: spin 700ms linear infinite;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.error {
+  font-family: $font-body;
+  font-size: 0.875rem;
+  color: $error;
+  max-width: 28rem;
+}
+
+.retryButton {
+  font-family: $font-body;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: $clinical-blue;
+  text-decoration: underline;
+  transition: $transition-base;
+
+  &:hover {
+    color: color.adjust($clinical-blue, $lightness: -8%);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
