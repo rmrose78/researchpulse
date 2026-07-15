@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from '@jest/globals'
+import { describe, it, expect, beforeAll, jest } from '@jest/globals'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { axe } from 'jest-axe'
@@ -30,10 +30,16 @@ function makeArticle(overrides: Partial<ArticleSearchResult> = {}): ArticleSearc
   }
 }
 
+function renderCard(overrides: Partial<ArticleSearchResult> = {}, isSaved = false) {
+  return render(
+    <ArticleCard article={makeArticle(overrides)} isSaved={isSaved} onSaveToggle={jest.fn()} />
+  )
+}
+
 describe('ArticleCard', () => {
   it('renders the title', () => {
     // Arrange & Act
-    render(<ArticleCard article={makeArticle()} />)
+    renderCard()
 
     // Assert
     expect(
@@ -46,7 +52,7 @@ describe('ArticleCard', () => {
     const longAbstract = 'x'.repeat(400)
 
     // Act
-    render(<ArticleCard article={makeArticle({ abstract: longAbstract })} />)
+    renderCard({ abstract: longAbstract })
 
     // Assert
     expect(screen.getByText(longAbstract)).toHaveAttribute('data-expanded', 'false')
@@ -54,7 +60,7 @@ describe('ArticleCard', () => {
 
   it('renders no abstract paragraph when abstract is null', () => {
     // Arrange & Act
-    render(<ArticleCard article={makeArticle({ abstract: null })} />)
+    renderCard({ abstract: null })
 
     // Assert
     expect(screen.queryByText(/short abstract/i)).not.toBeInTheDocument()
@@ -62,7 +68,7 @@ describe('ArticleCard', () => {
 
   it('shows authors, journal, and pub date in the metadata line', () => {
     // Arrange & Act
-    render(<ArticleCard article={makeArticle()} />)
+    renderCard()
 
     // Assert
     expect(screen.getByText(/smith j, lee k/i)).toBeInTheDocument()
@@ -70,17 +76,17 @@ describe('ArticleCard', () => {
     expect(screen.getByText(/2026-01-15/)).toBeInTheDocument()
   })
 
-  it('does not render an expand control when abstract is null', () => {
+  it('does not render an abstract expand control when abstract is null', () => {
     // Arrange & Act
-    render(<ArticleCard article={makeArticle({ abstract: null })} />)
+    renderCard({ abstract: null })
 
     // Assert
-    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /read more/i })).not.toBeInTheDocument()
   })
 
   it('renders a collapsed Read more button when an abstract is present', () => {
     // Arrange & Act
-    render(<ArticleCard article={makeArticle()} />)
+    renderCard()
 
     // Assert
     const button = screen.getByRole('button', { name: /read more/i })
@@ -91,7 +97,7 @@ describe('ArticleCard', () => {
     // Arrange
     const longAbstract = 'x'.repeat(400)
     const user = userEvent.setup()
-    render(<ArticleCard article={makeArticle({ abstract: longAbstract })} />)
+    renderCard({ abstract: longAbstract })
 
     // Act
     await user.click(screen.getByRole('button', { name: /read more/i }))
@@ -106,7 +112,7 @@ describe('ArticleCard', () => {
     // Arrange
     const longAbstract = 'x'.repeat(400)
     const user = userEvent.setup()
-    render(<ArticleCard article={makeArticle({ abstract: longAbstract })} />)
+    renderCard({ abstract: longAbstract })
     await user.click(screen.getByRole('button', { name: /read more/i }))
 
     // Act
@@ -125,8 +131,16 @@ describe('ArticleCard', () => {
     const user = userEvent.setup()
     render(
       <>
-        <ArticleCard article={makeArticle({ pmid: '1', abstract: 'x'.repeat(400) })} />
-        <ArticleCard article={makeArticle({ pmid: '2', abstract: 'y'.repeat(400) })} />
+        <ArticleCard
+          article={makeArticle({ pmid: '1', abstract: 'x'.repeat(400) })}
+          isSaved={false}
+          onSaveToggle={jest.fn()}
+        />
+        <ArticleCard
+          article={makeArticle({ pmid: '2', abstract: 'y'.repeat(400) })}
+          isSaved={false}
+          onSaveToggle={jest.fn()}
+        />
       </>
     )
 
@@ -143,9 +157,41 @@ describe('ArticleCard', () => {
     )
   })
 
+  it('shows an unpressed save toggle labeled to save when not yet saved', () => {
+    // Arrange & Act
+    renderCard({}, false)
+
+    // Assert
+    const button = screen.getByRole('button', { name: /save to reading list/i })
+    expect(button).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('shows a pressed save toggle labeled to remove when already saved', () => {
+    // Arrange & Act
+    renderCard({}, true)
+
+    // Assert
+    const button = screen.getByRole('button', { name: /remove from reading list/i })
+    expect(button).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('calls onSaveToggle with the article when the save toggle is clicked', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const onSaveToggle = jest.fn()
+    const article = makeArticle()
+    render(<ArticleCard article={article} isSaved={false} onSaveToggle={onSaveToggle} />)
+
+    // Act
+    await user.click(screen.getByRole('button', { name: /save to reading list/i }))
+
+    // Assert
+    expect(onSaveToggle).toHaveBeenCalledWith(article)
+  })
+
   it('has no automatically detectable accessibility violations when collapsed', async () => {
     // Arrange
-    const { container } = render(<ArticleCard article={makeArticle()} />)
+    const { container } = renderCard()
 
     // Act
     const results = await axe(container)
@@ -157,7 +203,7 @@ describe('ArticleCard', () => {
   it('has no automatically detectable accessibility violations when expanded', async () => {
     // Arrange
     const user = userEvent.setup()
-    const { container } = render(<ArticleCard article={makeArticle()} />)
+    const { container } = renderCard()
     await user.click(screen.getByRole('button', { name: /read more/i }))
 
     // Act

@@ -1,16 +1,33 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals'
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { axe } from 'jest-axe'
 import TrendingPage from './trending-page'
-import { searchArticles } from '@/utils/api'
+import ReadingListProvider from '@/components/providers/reading-list-provider'
+import { getSavedArticles, searchArticles } from '@/utils/api'
 import type { ArticleSearchResult, SearchResponse } from '@/types'
 
 jest.mock('@/utils/api', () => ({
   searchArticles: jest.fn(),
+  getSavedArticles: jest.fn(),
+  saveArticle: jest.fn(),
+  removeSavedArticle: jest.fn(),
 }))
 
 const mockedSearchArticles = jest.mocked(searchArticles)
+const mockedGetSavedArticles = jest.mocked(getSavedArticles)
+
+async function renderPage() {
+  const utils = render(
+    <ReadingListProvider>
+      <TrendingPage />
+    </ReadingListProvider>
+  )
+  // Flush the provider's initial getSavedArticles() fetch so its resolution
+  // doesn't land after the test (and its act(...) wrapper) has finished.
+  await act(async () => {})
+  return utils
+}
 
 function makeArticle(overrides: Partial<ArticleSearchResult> = {}): ArticleSearchResult {
   return {
@@ -31,6 +48,8 @@ function makeResponse(results: ArticleSearchResult[], query = 'cardiac'): Search
 
 beforeEach(() => {
   mockedSearchArticles.mockReset()
+  mockedGetSavedArticles.mockReset()
+  mockedGetSavedArticles.mockResolvedValue([])
   sessionStorage.clear()
 })
 
@@ -39,9 +58,9 @@ async function expandSearch() {
 }
 
 describe('TrendingPage', () => {
-  it('shows trending content and a search toggle by default, with no search form', () => {
+  it('shows trending content and a search toggle by default, with no search form', async () => {
     // Arrange & Act
-    render(<TrendingPage />)
+    await renderPage()
 
     // Assert
     expect(screen.getByRole('heading', { name: /^trending$/i })).toBeInTheDocument()
@@ -52,7 +71,7 @@ describe('TrendingPage', () => {
 
   it('clicking the search toggle reveals the search form and hides the trending content', async () => {
     // Arrange
-    render(<TrendingPage />)
+    await renderPage()
 
     // Act
     await expandSearch()
@@ -67,7 +86,7 @@ describe('TrendingPage', () => {
 
   it('blocks a short query without calling the API or leaving the search form', async () => {
     // Arrange
-    render(<TrendingPage />)
+    await renderPage()
     await expandSearch()
 
     // Act
@@ -81,7 +100,7 @@ describe('TrendingPage', () => {
   it('searches and shows results as cards, replacing the search form', async () => {
     // Arrange
     mockedSearchArticles.mockResolvedValue(makeResponse([makeArticle()]))
-    render(<TrendingPage />)
+    await renderPage()
     await expandSearch()
 
     // Act
@@ -96,7 +115,7 @@ describe('TrendingPage', () => {
   it('going back to trending from results preserves the typed query without re-calling the API on an unchanged resubmit', async () => {
     // Arrange
     mockedSearchArticles.mockResolvedValue(makeResponse([makeArticle()]))
-    render(<TrendingPage />)
+    await renderPage()
     await expandSearch()
     await userEvent.type(screen.getByRole('textbox', { name: /search pubmed/i }), 'cardiac{Enter}')
     await waitFor(() => expect(screen.getByRole('heading', { name: /a cardiac study/i })).toBeInTheDocument())
@@ -121,7 +140,7 @@ describe('TrendingPage', () => {
   it('shows an empty state for zero results, not an error', async () => {
     // Arrange
     mockedSearchArticles.mockResolvedValue(makeResponse([]))
-    render(<TrendingPage />)
+    await renderPage()
     await expandSearch()
 
     // Act
@@ -134,7 +153,7 @@ describe('TrendingPage', () => {
   it('passes filled-in filters through to the search request', async () => {
     // Arrange
     mockedSearchArticles.mockResolvedValue(makeResponse([makeArticle()]))
-    render(<TrendingPage />)
+    await renderPage()
     await expandSearch()
     await userEvent.click(screen.getByRole('button', { name: /show filters/i }))
     await userEvent.type(screen.getByLabelText(/journal/i), 'The Lancet')
@@ -156,7 +175,7 @@ describe('TrendingPage', () => {
     // Arrange
     mockedSearchArticles.mockRejectedValueOnce(new Error('API error: 502'))
     mockedSearchArticles.mockResolvedValueOnce(makeResponse([makeArticle()]))
-    render(<TrendingPage />)
+    await renderPage()
     await expandSearch()
     await userEvent.type(screen.getByRole('textbox', { name: /search pubmed/i }), 'cardiac{Enter}')
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument())
@@ -171,7 +190,7 @@ describe('TrendingPage', () => {
 
   it('has no automatically detectable accessibility violations on the trending default', async () => {
     // Arrange
-    const { container } = render(<TrendingPage />)
+    const { container } = await renderPage()
 
     // Act
     const results = await axe(container)
@@ -182,7 +201,7 @@ describe('TrendingPage', () => {
 
   it('has no automatically detectable accessibility violations with the search form expanded', async () => {
     // Arrange
-    const { container } = render(<TrendingPage />)
+    const { container } = await renderPage()
     await expandSearch()
 
     // Act

@@ -24,11 +24,49 @@
   }
 }
 
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
 .title {
   font-family: $font-heading;
   font-weight: 600;
   font-size: 1.1rem;
   color: $navy-text;
+}
+
+.saveToggle {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border: none;
+  background: transparent;
+  color: $gray-600;
+  cursor: pointer;
+  border-radius: 0.25rem;
+  transition: $transition-base;
+
+  &:hover {
+    color: $clinical-blue;
+  }
+
+  &[aria-pressed='true'] {
+    color: $clinical-blue;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $clinical-blue;
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
 }
 
 .abstractWrapper {

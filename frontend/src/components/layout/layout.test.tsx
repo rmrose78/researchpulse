@@ -1,8 +1,17 @@
-import { describe, it, expect } from '@jest/globals'
+import { describe, it, expect, jest } from '@jest/globals'
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { axe } from 'jest-axe'
 import Layout from './layout'
+import { RESET_TO_TRENDING_EVENT } from '@/hooks/use-search'
+
+// Layout only imports use-search.ts for the reset-event constant, but that
+// module also imports utils/api.ts (which uses import.meta.env) — mock it
+// so ts-jest never has to transpile the real module in this test file.
+jest.mock('@/utils/api', () => ({
+  searchArticles: jest.fn(),
+}))
 
 function renderLayout(initialEntry = '/') {
   return render(
@@ -73,6 +82,22 @@ describe('Layout', () => {
     expect(brandLink).toHaveAttribute('aria-current', 'page')
     expect(trendingLink).toHaveAttribute('aria-current', 'page')
     expect(readingListLink).not.toHaveAttribute('aria-current')
+  })
+
+  it('dispatches a reset-to-trending event when the Trending link or brand is clicked', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const onReset = jest.fn()
+    window.addEventListener(RESET_TO_TRENDING_EVENT, onReset)
+    renderLayout()
+
+    // Act
+    await user.click(screen.getByRole('link', { name: /^trending$/i }))
+    await user.click(screen.getByRole('link', { name: /researchpulse home/i }))
+
+    // Assert
+    expect(onReset).toHaveBeenCalledTimes(2)
+    window.removeEventListener(RESET_TO_TRENDING_EVENT, onReset)
   })
 
   it('renders a footer landmark with a copyright notice', () => {

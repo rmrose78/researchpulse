@@ -1,4 +1,4 @@
-import type { SearchFilters, SearchResponse } from '@/types'
+import type { ArticleSearchResult, SavedArticle, SearchFilters, SearchResponse } from '@/types'
 import { toPubMedDate } from './format'
 import { API_BASE_URL as BASE_URL } from './env'
 
@@ -21,6 +21,37 @@ export async function searchArticles(
   if (filters.date_to) params.set('date_to', toPubMedDate(filters.date_to))
 
   const res = await fetch(`${BASE_URL}/api/search/?${params.toString()}`)
+  if (!res.ok) throw new Error(`API error: ${res.status}`)
+  return res.json()
+}
+
+// Returns null on a 409 (already saved) — that's treated as success by
+// callers, but the response body is an error detail, not a SavedArticle.
+export async function saveArticle(article: ArticleSearchResult): Promise<SavedArticle | null> {
+  const res = await fetch(`${BASE_URL}/api/reading-list/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      pmid: article.pmid,
+      title: article.title,
+      authors: article.authors,
+      journal: article.journal,
+      pub_date: article.pub_date,
+      doi: article.doi,
+    }),
+  })
+  if (res.status === 409) return null
+  if (!res.ok) throw new Error(`API error: ${res.status}`)
+  return res.json()
+}
+
+export async function removeSavedArticle(pmid: string): Promise<void> {
+  const res = await fetch(`${BASE_URL}/api/reading-list/${pmid}`, { method: 'DELETE' })
+  if (!res.ok && res.status !== 404) throw new Error(`API error: ${res.status}`)
+}
+
+export async function getSavedArticles(): Promise<SavedArticle[]> {
+  const res = await fetch(`${BASE_URL}/api/reading-list/`)
   if (!res.ok) throw new Error(`API error: ${res.status}`)
   return res.json()
 }

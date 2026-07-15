@@ -19,3 +19,14 @@ export interface SearchFilters {
   date_from: string
   date_to: string
 }
+
+export interface SavedArticle {
+  id: number
+  pmid: string
+  title: string
+  authors: string | null
+  journal: string | null
+  pub_date: string | null
+  doi: string | null
+  saved_at: string
+}

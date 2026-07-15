@@ -1,6 +1,6 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals'
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { useSearch, SEARCH_STORAGE_KEY } from './use-search'
+import { useSearch, SEARCH_STORAGE_KEY, RESET_TO_TRENDING_EVENT } from './use-search'
 import { searchArticles } from '@/utils/api'
 import type { ArticleSearchResult, SearchFilters, SearchResponse } from '@/types'
 
@@ -62,6 +62,23 @@ describe('useSearch', () => {
 
     // Assert
     expect(result.current.view).toBe('search')
+  })
+
+  it('resets to the trending view when the reset event fires, even mid-search or on results', () => {
+    // Arrange
+    const { result } = renderHook(() => useSearch())
+    act(() => {
+      result.current.expandSearch()
+    })
+    expect(result.current.view).toBe('search')
+
+    // Act
+    act(() => {
+      window.dispatchEvent(new Event(RESET_TO_TRENDING_EVENT))
+    })
+
+    // Assert
+    expect(result.current.view).toBe('trending')
   })
 
   it('goes to loading then success on a search with results', async () => {

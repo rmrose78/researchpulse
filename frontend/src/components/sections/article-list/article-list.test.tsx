@@ -1,8 +1,18 @@
-import { describe, it, expect } from '@jest/globals'
-import { render, screen } from '@testing-library/react'
+import { describe, it, expect, jest, beforeEach } from '@jest/globals'
+import { act, render, screen } from '@testing-library/react'
 import { axe } from 'jest-axe'
 import ArticleList from './article-list'
+import ReadingListProvider from '@/components/providers/reading-list-provider'
+import { getSavedArticles } from '@/utils/api'
 import type { ArticleSearchResult } from '@/types'
+
+jest.mock('@/utils/api', () => ({
+  getSavedArticles: jest.fn(),
+  saveArticle: jest.fn(),
+  removeSavedArticle: jest.fn(),
+}))
+
+const mockedGetSavedArticles = jest.mocked(getSavedArticles)
 
 function makeArticle(overrides: Partial<ArticleSearchResult> = {}): ArticleSearchResult {
   return {
@@ -17,8 +27,25 @@ function makeArticle(overrides: Partial<ArticleSearchResult> = {}): ArticleSearc
   }
 }
 
+async function renderList(articles: ArticleSearchResult[]) {
+  const utils = render(
+    <ReadingListProvider>
+      <ArticleList articles={articles} />
+    </ReadingListProvider>
+  )
+  // Flush the provider's initial getSavedArticles() fetch so its resolution
+  // doesn't land after the test (and its act(...) wrapper) has finished.
+  await act(async () => {})
+  return utils
+}
+
+beforeEach(() => {
+  mockedGetSavedArticles.mockReset()
+  mockedGetSavedArticles.mockResolvedValue([])
+})
+
 describe('ArticleList', () => {
-  it('renders one card per article', () => {
+  it('renders one card per article', async () => {
     // Arrange
     const articles = [
       makeArticle({ pmid: '1', title: 'First article' }),
@@ -26,16 +53,16 @@ describe('ArticleList', () => {
     ]
 
     // Act
-    render(<ArticleList articles={articles} />)
+    await renderList(articles)
 
     // Assert
     expect(screen.getByRole('heading', { name: /first article/i })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: /second article/i })).toBeInTheDocument()
   })
 
-  it('renders an empty list with no items when given no articles', () => {
+  it('renders an empty list with no items when given no articles', async () => {
     // Arrange & Act
-    render(<ArticleList articles={[]} />)
+    await renderList([])
 
     // Assert
     expect(screen.queryAllByRole('article')).toHaveLength(0)
@@ -43,7 +70,7 @@ describe('ArticleList', () => {
 
   it('has no automatically detectable accessibility violations', async () => {
     // Arrange
-    const { container } = render(<ArticleList articles={[makeArticle()]} />)
+    const { container } = await renderList([makeArticle()])
 
     // Act
     const results = await axe(container)

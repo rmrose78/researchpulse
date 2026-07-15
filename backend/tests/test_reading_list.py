@@ -1,11 +1,25 @@
 from fastapi.testclient import TestClient
 from app.main import app
+from app.models.reading_list import SavedArticle
 
 client = TestClient(app)
 
 
 def _delete_if_exists(pmid: str):
     client.delete(f"/api/reading-list/{pmid}")
+
+
+def test_saved_at_default_is_evaluated_per_row_not_at_import_time():
+    # Arrange
+    column = SavedArticle.__table__.columns["saved_at"]
+
+    # Act
+    default_arg = column.default.arg
+
+    # Assert — a callable default is invoked fresh for each insert; a bare
+    # datetime instance would be computed once at import time and reused
+    # (identically) for every row, making ORDER BY saved_at DESC meaningless.
+    assert callable(default_arg)
 
 
 def test_save_article_returns_201():

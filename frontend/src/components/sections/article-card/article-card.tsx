@@ -1,12 +1,14 @@
 import { useId, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
-import { ChevronDown } from 'lucide-react'
+import { Bookmark, BookmarkCheck, ChevronDown } from 'lucide-react'
 import type { ArticleSearchResult } from '@/types'
 import { formatAuthors } from '@/utils/format'
 import styles from './article-card.module.scss'
 
 interface ArticleCardProps {
   article: ArticleSearchResult
+  isSaved: boolean
+  onSaveToggle: (article: ArticleSearchResult) => void
 }
 
 const ANIMATION_TRANSITION = { type: 'tween', duration: 0.2, ease: 'easeInOut' } as const
@@ -16,7 +18,7 @@ const chevronRotate = {
   expanded: { rotate: 180 },
 } as const
 
-export default function ArticleCard({ article }: ArticleCardProps) {
+export default function ArticleCard({ article, isSaved, onSaveToggle }: ArticleCardProps) {
   const [expanded, setExpanded] = useState(false)
   const abstractId = useId()
   const reducedMotion = useReducedMotion()
@@ -28,7 +30,18 @@ export default function ArticleCard({ article }: ArticleCardProps) {
 
   return (
     <article className={styles.card}>
-      <h3 className={styles.title}>{article.title}</h3>
+      <div className={styles.header}>
+        <h3 className={styles.title}>{article.title}</h3>
+        <button
+          type="button"
+          className={styles.saveToggle}
+          aria-pressed={isSaved}
+          aria-label={isSaved ? 'Remove from reading list' : 'Save to reading list'}
+          onClick={() => onSaveToggle(article)}
+        >
+          {isSaved ? <BookmarkCheck size={20} aria-hidden="true" /> : <Bookmark size={20} aria-hidden="true" />}
+        </button>
+      </div>
       {article.abstract && (
         <>
           <motion.div layout className={styles.abstractWrapper} transition={transition}>

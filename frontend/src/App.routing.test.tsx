@@ -1,57 +1,71 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals'
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import App from './App'
-import { searchArticles } from '@/utils/api'
+import { getSavedArticles, searchArticles } from '@/utils/api'
 
 jest.mock('@/utils/api', () => ({
   searchArticles: jest.fn(),
+  getSavedArticles: jest.fn(),
+  saveArticle: jest.fn(),
+  removeSavedArticle: jest.fn(),
 }))
 
 function navigateTo(path: string) {
   window.history.pushState({}, '', path)
 }
 
+async function renderApp() {
+  const utils = render(<App />)
+  // Flush ReadingListProvider's initial getSavedArticles() fetch so its
+  // resolution doesn't land after the test (and its act(...) wrapper) has finished.
+  await act(async () => {})
+  return utils
+}
+
 beforeEach(() => {
   jest.mocked(searchArticles).mockReset()
+  jest.mocked(getSavedArticles).mockReset()
+  jest.mocked(getSavedArticles).mockResolvedValue([])
   sessionStorage.clear()
   navigateTo('/')
 })
 
 describe('App routing', () => {
-  it('renders the merged trending/search landing page at /', () => {
+  it('renders the merged trending/search landing page at /', async () => {
     // Arrange & Act
-    render(<App />)
+    await renderApp()
 
     // Assert
     expect(screen.getByRole('heading', { name: /^trending$/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^search pubmed$/i })).toBeInTheDocument()
   })
 
-  it('renders the reading list placeholder at /reading-list', () => {
+  it('renders the reading list placeholder at /reading-list', async () => {
     // Arrange
     navigateTo('/reading-list')
 
     // Act
-    render(<App />)
+    await renderApp()
 
     // Assert
     expect(screen.getByRole('heading', { name: /^reading list$/i })).toBeInTheDocument()
   })
 
-  it('redirects an unknown route back to / (the merged landing page)', () => {
+  it('redirects an unknown route back to / (the merged landing page)', async () => {
     // Arrange
     navigateTo('/this-route-does-not-exist')
 
     // Act
-    render(<App />)
+    await renderApp()
 
     // Assert
     expect(screen.getByRole('heading', { name: /^trending$/i })).toBeInTheDocument()
   })
 
-  it('has working nav links to trending and reading list, and a home link to the landing page', () => {
+  it('has working nav links to trending and reading list, and a home link to the landing page', async () => {
     // Arrange
-    render(<App />)
+    await renderApp()
 
     // Act & Assert
     expect(screen.queryByRole('link', { name: /^search$/i })).not.toBeInTheDocument()
@@ -63,14 +77,31 @@ describe('App routing', () => {
     expect(screen.getByRole('link', { name: /researchpulse home/i })).toHaveAttribute('href', '/')
   })
 
-  it('the trending nav link is reachable from the reading list page', () => {
+  it('the trending nav link is reachable from the reading list page', async () => {
     // Arrange
     navigateTo('/reading-list')
 
     // Act
-    render(<App />)
+    await renderApp()
 
     // Assert
     expect(screen.getByRole('link', { name: /^trending$/i })).toHaveAttribute('href', '/')
+  })
+
+  it('clicking Trending in the nav resets an expanded search form back to the trending default', async () => {
+    // Arrange — React Router doesn't remount the page for a same-route
+    // click, so without an explicit reset the expanded search form would
+    // stick around even after clicking Trending.
+    await renderApp()
+    await userEvent.click(screen.getByRole('button', { name: /^search pubmed$/i }))
+    expect(screen.getByRole('textbox', { name: /search pubmed/i })).toBeInTheDocument()
+
+    // Act
+    await userEvent.click(screen.getByRole('link', { name: /^trending$/i }))
+
+    // Assert
+    expect(screen.getByRole('heading', { name: /^trending$/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^search pubmed$/i })).toBeInTheDocument()
+    expect(screen.queryByRole('textbox', { name: /search pubmed/i })).not.toBeInTheDocument()
   })
 })

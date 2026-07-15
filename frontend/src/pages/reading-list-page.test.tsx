@@ -1,21 +1,121 @@
-import { describe, it, expect } from '@jest/globals'
-import { render, screen } from '@testing-library/react'
+import { describe, it, expect, jest, beforeEach } from '@jest/globals'
+import { act, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { axe } from 'jest-axe'
 import ReadingListPage from './reading-list-page'
+import ReadingListProvider from '@/components/providers/reading-list-provider'
+import { getSavedArticles } from '@/utils/api'
+import type { SavedArticle } from '@/types'
+
+jest.mock('@/utils/api', () => ({
+  getSavedArticles: jest.fn(),
+  saveArticle: jest.fn(),
+  removeSavedArticle: jest.fn(),
+}))
+
+const mockedGetSavedArticles = jest.mocked(getSavedArticles)
+
+function makeSaved(overrides: Partial<SavedArticle> = {}): SavedArticle {
+  return {
+    id: 1,
+    pmid: '123',
+    title: 'A cardiac study',
+    authors: 'Smith J, Lee K',
+    journal: 'Journal of Cardiology',
+    pub_date: '2026-01-01',
+    doi: null,
+    saved_at: '2026-01-01T00:00:00Z',
+    ...overrides,
+  }
+}
+
+async function renderPage() {
+  const utils = render(
+    <ReadingListProvider>
+      <ReadingListPage />
+    </ReadingListProvider>
+  )
+  await act(async () => {})
+  return utils
+}
+
+beforeEach(() => {
+  mockedGetSavedArticles.mockReset()
+})
 
 describe('ReadingListPage', () => {
-  it('renders a heading and placeholder message', () => {
-    // Arrange & Act
-    render(<ReadingListPage />)
+  it('shows a skeleton while the initial fetch is in flight', () => {
+    // Arrange
+    mockedGetSavedArticles.mockReturnValue(new Promise(() => {}))
+
+    // Act
+    render(
+      <ReadingListProvider>
+        <ReadingListPage />
+      </ReadingListProvider>
+    )
 
     // Assert
-    expect(screen.getByRole('heading', { name: /^reading list$/i })).toBeInTheDocument()
-    expect(screen.getByText(/coming soon/i)).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent(/loading results/i)
   })
 
-  it('has no automatically detectable accessibility violations', async () => {
+  it('shows saved articles newest first once loaded', async () => {
     // Arrange
-    const { container } = render(<ReadingListPage />)
+    mockedGetSavedArticles.mockResolvedValue([
+      makeSaved({ pmid: '1', title: 'Newest saved article' }),
+      makeSaved({ pmid: '2', title: 'Oldest saved article' }),
+    ])
+
+    // Act
+    await renderPage()
+
+    // Assert
+    const headings = screen.getAllByRole('heading', { level: 3 })
+    expect(headings[0]).toHaveTextContent(/newest saved article/i)
+    expect(headings[1]).toHaveTextContent(/oldest saved article/i)
+  })
+
+  it('shows an inviting empty state when nothing is saved', async () => {
+    // Arrange
+    mockedGetSavedArticles.mockResolvedValue([])
+
+    // Act
+    await renderPage()
+
+    // Assert
+    expect(screen.getByText(/your reading list is empty/i)).toBeInTheDocument()
+  })
+
+  it('shows an error state with a working retry on load failure', async () => {
+    // Arrange
+    mockedGetSavedArticles.mockRejectedValueOnce(new Error('API error: 500'))
+    mockedGetSavedArticles.mockResolvedValueOnce([makeSaved()])
+    await renderPage()
+    await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument())
+
+    // Act
+    await userEvent.click(screen.getByRole('button', { name: /retry/i }))
+
+    // Assert
+    await waitFor(() => expect(screen.getByRole('heading', { name: /a cardiac study/i })).toBeInTheDocument())
+  })
+
+  it('has no automatically detectable accessibility violations when populated', async () => {
+    // Arrange
+    mockedGetSavedArticles.mockResolvedValue([makeSaved()])
+    const { container } = await renderPage()
+
+    // Act
+    const results = await axe(container)
+
+    // Assert
+    expect(results).toHaveNoViolations()
+  })
+
+  it('has no automatically detectable accessibility violations when empty', async () => {
+    // Arrange
+    mockedGetSavedArticles.mockResolvedValue([])
+    const { container } = await renderPage()
 
     // Act
     const results = await axe(container)
