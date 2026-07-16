@@ -78,8 +78,8 @@ export default function ArticleCard({
       <p className={styles.metadata}>{metadata}</p>
       {citationStat && (
         <p className={styles.citationStat}>
-          {citationStat.count} {citationStat.count === 1 ? 'citation' : 'citations'} · velocity{' '}
-          {citationStat.velocity.toFixed(2)}
+          {citationStat.count} {citationStat.count === 1 ? 'citation' : 'citations'}
+          {citationStat.velocity !== undefined && <> · velocity {citationStat.velocity.toFixed(2)}</>}
         </p>
       )}
     </article>

@@ -33,7 +33,7 @@ export interface SavedArticle {
 
 export interface CitationStat {
   count: number
-  velocity: number
+  velocity?: number
 }
 
 export interface TrendingArticle extends ArticleSearchResult {
@@ -43,6 +43,7 @@ export interface TrendingArticle extends ArticleSearchResult {
 
 export interface TrendingResponse {
   specialty: string
+  mode: string
   window_days: number
   computed_at: string
   results: TrendingArticle[]
@@ -50,5 +51,6 @@ export interface TrendingResponse {
 
 export interface TrendingAvailabilityResponse {
   window_days: number
+  mode: string
   available: Record<string, boolean>
 }

@@ -8,6 +8,7 @@ import ReadingListProvider from '@/components/providers/reading-list-provider'
 import { getSavedArticles, getTrending, getTrendingAvailability } from '@/utils/api'
 import { DEFAULT_SPECIALTY } from '@/utils/specialties'
 import { DEFAULT_WINDOW_DAYS } from '@/utils/time-ranges'
+import { DEFAULT_MODE } from '@/utils/trending-modes'
 import type { TrendingResponse } from '@/types'
 
 jest.mock('@/utils/api', () => ({
@@ -26,6 +27,7 @@ const mockedGetTrendingAvailability = jest.mocked(getTrendingAvailability)
 function makeTrendingResponse(overrides: Partial<TrendingResponse> = {}): TrendingResponse {
   return {
     specialty: DEFAULT_SPECIALTY,
+    mode: DEFAULT_MODE,
     window_days: DEFAULT_WINDOW_DAYS,
     computed_at: '2026-01-01T00:00:00Z',
     results: [],
@@ -53,7 +55,11 @@ beforeEach(() => {
   mockedGetTrending.mockReset()
   mockedGetTrending.mockResolvedValue(makeTrendingResponse())
   mockedGetTrendingAvailability.mockReset()
-  mockedGetTrendingAvailability.mockResolvedValue({ window_days: DEFAULT_WINDOW_DAYS, available: {} })
+  mockedGetTrendingAvailability.mockResolvedValue({
+    window_days: DEFAULT_WINDOW_DAYS,
+    mode: DEFAULT_MODE,
+    available: {},
+  })
   sessionStorage.clear()
 })
 
@@ -64,6 +70,15 @@ describe('TrendingPage', () => {
 
     // Assert
     expect(screen.getByRole('radiogroup', { name: /specialty/i })).toBeInTheDocument()
+  })
+
+  it('shows the mode selector defaulting to Trending', async () => {
+    // Arrange & Act
+    await renderPage()
+
+    // Assert
+    expect(screen.getByRole('radiogroup', { name: /mode/i })).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: /^trending$/i })).toHaveAttribute('aria-checked', 'true')
   })
 
   it('shows trending results once loaded, with a freshness indicator', async () => {
@@ -141,7 +156,7 @@ describe('TrendingPage', () => {
 
     // Assert
     await waitFor(() =>
-      expect(mockedGetTrending).toHaveBeenLastCalledWith('oncology', DEFAULT_WINDOW_DAYS)
+      expect(mockedGetTrending).toHaveBeenLastCalledWith('oncology', DEFAULT_MODE, DEFAULT_WINDOW_DAYS)
     )
   })
 
@@ -156,14 +171,73 @@ describe('TrendingPage', () => {
 
     // Assert
     await waitFor(() =>
-      expect(mockedGetTrending).toHaveBeenLastCalledWith(DEFAULT_SPECIALTY, 60)
+      expect(mockedGetTrending).toHaveBeenLastCalledWith(DEFAULT_SPECIALTY, DEFAULT_MODE, 60)
     )
+  })
+
+  it('switching mode requests trending data for the newly selected mode', async () => {
+    // Arrange
+    await renderPage()
+    await waitFor(() => expect(mockedGetTrending).toHaveBeenCalledTimes(1))
+
+    // Act
+    await userEvent.click(screen.getByRole('radio', { name: /most cited/i }))
+
+    // Assert
+    await waitFor(() =>
+      expect(mockedGetTrending).toHaveBeenLastCalledWith(DEFAULT_SPECIALTY, 'most_cited', DEFAULT_WINDOW_DAYS)
+    )
+  })
+
+  it('hides the "how is this calculated" velocity trigger outside Trending mode', async () => {
+    // Arrange
+    mockedGetTrending.mockResolvedValue(makeTrendingResponse({ mode: 'most_cited' }))
+    await renderPage()
+    await screen.findByText(/updated .* · via semantic scholar/i)
+
+    // Act
+    await userEvent.click(screen.getByRole('radio', { name: /most cited/i }))
+
+    // Assert
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: /how is this calculated/i })).not.toBeInTheDocument()
+    )
+  })
+
+  it('omits the velocity figure from the citation stat line outside Trending mode', async () => {
+    // Arrange
+    const article = {
+      pmid: '123',
+      title: 'A most-cited study',
+      abstract: null,
+      authors: [],
+      journal: null,
+      pub_date: '2025/Jan',
+      doi: null,
+      citation_count: 50,
+      velocity: 0.1,
+    }
+    mockedGetTrending.mockResolvedValue(makeTrendingResponse({ results: [article] }))
+    await renderPage()
+    await screen.findByRole('heading', { name: /a most-cited study/i })
+
+    // Act
+    mockedGetTrending.mockResolvedValue(
+      makeTrendingResponse({ mode: 'most_cited', results: [article] })
+    )
+    await userEvent.click(screen.getByRole('radio', { name: /most cited/i }))
+    await screen.findByRole('heading', { name: /a most-cited study/i })
+
+    // Assert
+    await waitFor(() => expect(screen.getByText('50 citations')).toBeInTheDocument())
+    expect(screen.queryByText(/velocity/i)).not.toBeInTheDocument()
   })
 
   it('disables a specialty pill already known to have no results at the current range', async () => {
     // Arrange
     mockedGetTrendingAvailability.mockResolvedValue({
       window_days: DEFAULT_WINDOW_DAYS,
+      mode: DEFAULT_MODE,
       available: { oncology: false },
     })
 

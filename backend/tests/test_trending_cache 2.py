@@ -56,17 +56,6 @@ async def test_get_trending_rejects_unsupported_window_days():
 
 
 @pytest.mark.asyncio
-async def test_get_trending_rejects_unknown_mode():
-    # Arrange
-    db = sessionLocal()
-
-    # Act & Assert
-    with pytest.raises(trending_service.UnknownModeError):
-        await trending_service.get_trending(db, AsyncMock(), SPECIALTY, WINDOW_DAYS, "bogus_mode")
-    db.close()
-
-
-@pytest.mark.asyncio
 async def test_get_trending_computes_and_stores_on_cold_cache(monkeypatch):
     # Arrange
     mock_fetch = AsyncMock(return_value=[_fake_ranked_article()])
@@ -106,7 +95,7 @@ async def test_get_trending_caches_each_window_days_independently(monkeypatch):
     # Arrange — same specialty, two different time ranges
     call_count = 0
 
-    async def fake_fetch(specialty, client, window_days, today, mode=trending_service.DEFAULT_MODE):
+    async def fake_fetch(specialty, client, window_days, today):
         nonlocal call_count
         call_count += 1
         return [_fake_ranked_article(pmid=f"w{window_days}")]
@@ -122,30 +111,6 @@ async def test_get_trending_caches_each_window_days_independently(monkeypatch):
     assert call_count == 2
     assert short.payload[0]["pmid"] == "w60"
     assert long.payload[0]["pmid"] == "w730"
-    db.close()
-
-
-@pytest.mark.asyncio
-async def test_get_trending_caches_each_mode_independently(monkeypatch):
-    # Arrange — same specialty/window, two different modes
-    call_count = 0
-
-    async def fake_fetch(specialty, client, window_days, today, mode=trending_service.DEFAULT_MODE):
-        nonlocal call_count
-        call_count += 1
-        return [_fake_ranked_article(pmid=f"m-{mode}")]
-
-    monkeypatch.setattr(trending_service, "_fetch_ranked", fake_fetch)
-    db = sessionLocal()
-
-    # Act
-    trending = await trending_service.get_trending(db, AsyncMock(), SPECIALTY, WINDOW_DAYS, "trending")
-    most_cited = await trending_service.get_trending(db, AsyncMock(), SPECIALTY, WINDOW_DAYS, "most_cited")
-
-    # Assert — both computed independently, neither served from the other's cache
-    assert call_count == 2
-    assert trending.payload[0]["pmid"] == "m-trending"
-    assert most_cited.payload[0]["pmid"] == "m-most_cited"
     db.close()
 
 
@@ -173,7 +138,7 @@ async def test_get_trending_schedules_background_refresh_when_stale(monkeypatch)
 
     # Assert — stale data served immediately, refresh kicked off separately
     assert result.id == stale_snapshot.id
-    mock_bg.assert_called_once_with(SPECIALTY, WINDOW_DAYS, client, trending_service.DEFAULT_MODE)
+    mock_bg.assert_called_once_with(SPECIALTY, WINDOW_DAYS, client)
     db.close()
 
 
@@ -201,7 +166,7 @@ async def test_concurrent_cold_cache_requests_only_compute_once(monkeypatch):
     # Arrange — simulate two requests racing on a specialty with no cache yet
     call_count = 0
 
-    async def slow_fetch(specialty, client, window_days, today, mode=trending_service.DEFAULT_MODE):
+    async def slow_fetch(specialty, client, window_days, today):
         nonlocal call_count
         call_count += 1
         await asyncio.sleep(0.02)

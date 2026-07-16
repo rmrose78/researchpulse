@@ -63,8 +63,12 @@ export async function getSavedArticles(): Promise<SavedArticle[]> {
   return res.json()
 }
 
-export async function getTrending(specialty: string, windowDays: number): Promise<TrendingResponse> {
-  const params = new URLSearchParams({ specialty, window_days: String(windowDays) })
+export async function getTrending(
+  specialty: string,
+  mode: string,
+  windowDays: number
+): Promise<TrendingResponse> {
+  const params = new URLSearchParams({ specialty, mode, window_days: String(windowDays) })
   const res = await fetch(`${BASE_URL}/api/trending/?${params.toString()}`)
   if (!res.ok) throw new Error(`API error: ${res.status}`)
   return res.json()
@@ -73,9 +77,10 @@ export async function getTrending(specialty: string, windowDays: number): Promis
 // Cache-only lookup — never triggers a PubMed/Semantic Scholar call on the
 // backend, so this is safe to call on every time-range change.
 export async function getTrendingAvailability(
+  mode: string,
   windowDays: number
 ): Promise<TrendingAvailabilityResponse> {
-  const params = new URLSearchParams({ window_days: String(windowDays) })
+  const params = new URLSearchParams({ mode, window_days: String(windowDays) })
   const res = await fetch(`${BASE_URL}/api/trending/availability?${params.toString()}`)
   if (!res.ok) throw new Error(`API error: ${res.status}`)
   return res.json()

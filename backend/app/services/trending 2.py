@@ -9,10 +9,9 @@ from app.schemas.pubmed import ArticleSearchResult
 from app.schemas.trending import TrendingArticle
 from app.services.pubmed import pubmed_service
 from app.services.semantic_scholar import semantic_scholar_service
-from app.services.specialties import SPECIALTY_KEYWORDS, SPECIALTY_QUERIES
+from app.services.specialties import SPECIALTY_QUERIES
 
-VALID_MODES = {"trending", "most_cited", "new_notable"}
-DEFAULT_MODE = "trending"
+MODE = "trending"
 CACHE_TTL = timedelta(hours=8)
 # NCBI's efetch (GET, comma-joined ids) starts hitting URL-length limits well
 # before Semantic Scholar's own batch cap — 200 is comfortably under both.
@@ -38,10 +37,6 @@ class UnknownSpecialtyError(ValueError):
 
 
 class InvalidWindowError(ValueError):
-    pass
-
-
-class UnknownModeError(ValueError):
     pass
 
 
@@ -83,28 +78,13 @@ def compute_velocity(citation_count: int, age_in_days: int) -> float:
     return citation_count / (age_in_days + VELOCITY_AGE_SMOOTHING_DAYS)
 
 
-def _build_query(specialty: str, mode: str) -> str:
-    mesh_query = SPECIALTY_QUERIES[specialty]
-    if mode != "new_notable":
-        return mesh_query
-    keyword_query = " OR ".join(
-        f'"{keyword}"[Title/Abstract]' for keyword in SPECIALTY_KEYWORDS[specialty]
-    )
-    return f"({mesh_query}) OR ({keyword_query})"
-
-
 def rank_articles(
-    articles: list[ArticleSearchResult],
-    citation_counts: dict[str, int],
-    today: date,
-    mode: str = DEFAULT_MODE,
+    articles: list[ArticleSearchResult], citation_counts: dict[str, int], today: date
 ) -> list[TrendingArticle]:
     ranked: list[TrendingArticle] = []
     for article in articles:
-        count = citation_counts.get(article.pmid, 0)
-        # New & Notable is recency-driven, not citation-driven — a 0-citation
-        # (or entirely unmatched) article is exactly the case it exists for.
-        if count == 0 and mode != "new_notable":
+        count = citation_counts.get(article.pmid)
+        if not count:
             continue
         days = age_days(article.pub_date, today)
         if days is None:
@@ -116,12 +96,7 @@ def rank_articles(
                 velocity=compute_velocity(count, days),
             )
         )
-    if mode == "most_cited":
-        ranked.sort(key=lambda a: a.citation_count, reverse=True)
-    elif mode == "new_notable":
-        ranked.sort(key=lambda a: age_days(a.pub_date, today) or 0)
-    else:
-        ranked.sort(key=lambda a: a.velocity, reverse=True)
+    ranked.sort(key=lambda a: a.velocity, reverse=True)
     return ranked
 
 
@@ -150,11 +125,7 @@ def window_slices(today: date, window_days: int) -> list[tuple[str, str]]:
 # --- PubMed pool + citation lookup ------------------------------------------
 
 async def _rank_for_window(
-    mesh_query: str,
-    client: httpx.AsyncClient,
-    today: date,
-    window_days: int,
-    mode: str = DEFAULT_MODE,
+    mesh_query: str, client: httpx.AsyncClient, today: date, window_days: int
 ) -> list[TrendingArticle]:
     slices = window_slices(today, window_days)
     per_slice = max(1, POOL_SIZE // len(slices))
@@ -176,18 +147,14 @@ async def _rank_for_window(
 
     pmids = [article.pmid for article in all_articles]
     citation_counts = await semantic_scholar_service.get_citation_counts(client, pmids)
-    return rank_articles(all_articles, citation_counts, today, mode)
+    return rank_articles(all_articles, citation_counts, today)
 
 
 async def _fetch_ranked(
-    specialty: str,
-    client: httpx.AsyncClient,
-    window_days: int,
-    today: date,
-    mode: str = DEFAULT_MODE,
+    specialty: str, client: httpx.AsyncClient, window_days: int, today: date
 ) -> list[TrendingArticle]:
-    query = _build_query(specialty, mode)
-    return await _rank_for_window(query, client, today, window_days, mode)
+    mesh_query = SPECIALTY_QUERIES[specialty]
+    return await _rank_for_window(mesh_query, client, today, window_days)
 
 
 # --- Cache read/write + single-flight refresh --------------------------------
@@ -195,21 +162,19 @@ async def _fetch_ranked(
 _locks: dict[str, asyncio.Lock] = {}
 
 
-def _lock_for(specialty: str, window_days: int, mode: str = DEFAULT_MODE) -> asyncio.Lock:
-    key = f"{specialty}:{mode}:{window_days}"
+def _lock_for(specialty: str, window_days: int) -> asyncio.Lock:
+    key = f"{specialty}:{window_days}"
     if key not in _locks:
         _locks[key] = asyncio.Lock()
     return _locks[key]
 
 
-def _latest_snapshot(
-    db: Session, specialty: str, window_days: int, mode: str = DEFAULT_MODE
-) -> TrendingSnapshot | None:
+def _latest_snapshot(db: Session, specialty: str, window_days: int) -> TrendingSnapshot | None:
     return (
         db.query(TrendingSnapshot)
         .filter(
             TrendingSnapshot.specialty == specialty,
-            TrendingSnapshot.mode == mode,
+            TrendingSnapshot.mode == MODE,
             TrendingSnapshot.window_days == window_days,
         )
         .order_by(TrendingSnapshot.computed_at.desc())
@@ -218,13 +183,13 @@ def _latest_snapshot(
 
 
 async def _compute_and_store(
-    db: Session, client: httpx.AsyncClient, specialty: str, window_days: int, mode: str = DEFAULT_MODE
+    db: Session, client: httpx.AsyncClient, specialty: str, window_days: int
 ) -> TrendingSnapshot:
     today = datetime.now(timezone.utc).date()
-    ranked = await _fetch_ranked(specialty, client, window_days, today, mode)
+    ranked = await _fetch_ranked(specialty, client, window_days, today)
     snapshot = TrendingSnapshot(
         specialty=specialty,
-        mode=mode,
+        mode=MODE,
         window_days=window_days,
         payload=[article.model_dump(mode="json") for article in ranked],
     )
@@ -234,62 +199,56 @@ async def _compute_and_store(
     return snapshot
 
 
-async def _background_refresh(
-    specialty: str, window_days: int, client: httpx.AsyncClient, mode: str = DEFAULT_MODE
-) -> None:
-    lock = _lock_for(specialty, window_days, mode)
+async def _background_refresh(specialty: str, window_days: int, client: httpx.AsyncClient) -> None:
+    lock = _lock_for(specialty, window_days)
     if lock.locked():
         return
     async with lock:
         db = sessionLocal()
         try:
-            await _compute_and_store(db, client, specialty, window_days, mode)
+            await _compute_and_store(db, client, specialty, window_days)
         finally:
             db.close()
 
 
 async def get_trending(
-    db: Session, client: httpx.AsyncClient, specialty: str, window_days: int, mode: str = DEFAULT_MODE
+    db: Session, client: httpx.AsyncClient, specialty: str, window_days: int
 ) -> TrendingSnapshot:
     if specialty not in SPECIALTY_QUERIES:
         raise UnknownSpecialtyError(f"Unknown specialty '{specialty}'")
     if window_days not in VALID_WINDOW_DAYS:
         raise InvalidWindowError(f"Unsupported window_days '{window_days}'")
-    if mode not in VALID_MODES:
-        raise UnknownModeError(f"Unsupported mode '{mode}'")
 
-    latest = _latest_snapshot(db, specialty, window_days, mode)
+    latest = _latest_snapshot(db, specialty, window_days)
 
     if latest is None:
-        # Cold cache — the very first request for this (specialty, mode,
-        # window_days) blocks on a live computation, guarded by a per-key
-        # single-flight lock so concurrent cold requests only compute once.
-        lock = _lock_for(specialty, window_days, mode)
+        # Cold cache — the very first request for this (specialty, window_days)
+        # blocks on a live computation, guarded by a per-key single-flight
+        # lock so concurrent cold requests only compute once.
+        lock = _lock_for(specialty, window_days)
         async with lock:
-            latest = _latest_snapshot(db, specialty, window_days, mode)
+            latest = _latest_snapshot(db, specialty, window_days)
             if latest is None:
-                latest = await _compute_and_store(db, client, specialty, window_days, mode)
+                latest = await _compute_and_store(db, client, specialty, window_days)
         return latest
 
     if is_stale(latest, datetime.now(timezone.utc)):
         # Stale-while-revalidate — serve the last good snapshot immediately,
         # refresh in the background rather than blocking this request.
-        asyncio.create_task(_background_refresh(specialty, window_days, client, mode))
+        asyncio.create_task(_background_refresh(specialty, window_days, client))
 
     return latest
 
 
-def list_cached_availability(
-    db: Session, window_days: int, mode: str = DEFAULT_MODE
-) -> dict[str, bool]:
+def list_cached_availability(db: Session, window_days: int) -> dict[str, bool]:
     """Cache-only lookup (no external calls): which specialties are already
     known, from a previously computed snapshot, to have zero qualifying
-    results at this (mode, window_days). A specialty with no cached row yet
-    is simply omitted — callers should treat "missing" as "not yet known",
+    results at this window_days. A specialty with no cached row yet is
+    simply omitted — callers should treat "missing" as "not yet known",
     not "has results"."""
     rows = (
         db.query(TrendingSnapshot.specialty, TrendingSnapshot.payload)
-        .filter(TrendingSnapshot.mode == mode, TrendingSnapshot.window_days == window_days)
+        .filter(TrendingSnapshot.mode == MODE, TrendingSnapshot.window_days == window_days)
         .order_by(TrendingSnapshot.specialty, TrendingSnapshot.computed_at.desc())
         .all()
     )

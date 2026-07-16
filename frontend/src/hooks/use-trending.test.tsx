@@ -1,9 +1,12 @@
+import type { ReactNode } from 'react'
 import { describe, it, expect, jest, beforeEach } from '@jest/globals'
 import { act, renderHook, waitFor } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { useTrending } from './use-trending'
 import { getTrending, getTrendingAvailability } from '@/utils/api'
 import { SPECIALTIES, DEFAULT_SPECIALTY } from '@/utils/specialties'
 import { DEFAULT_WINDOW_DAYS, TIME_RANGES } from '@/utils/time-ranges'
+import { TRENDING_MODES, DEFAULT_MODE } from '@/utils/trending-modes'
 import type { TrendingArticle, TrendingAvailabilityResponse, TrendingResponse } from '@/types'
 
 jest.mock('@/utils/api', () => ({
@@ -32,6 +35,7 @@ function makeArticle(overrides: Partial<TrendingArticle> = {}): TrendingArticle 
 function makeResponse(overrides: Partial<TrendingResponse> = {}): TrendingResponse {
   return {
     specialty: DEFAULT_SPECIALTY,
+    mode: DEFAULT_MODE,
     window_days: DEFAULT_WINDOW_DAYS,
     computed_at: '2026-01-01T00:00:00Z',
     results: [makeArticle()],
@@ -42,7 +46,14 @@ function makeResponse(overrides: Partial<TrendingResponse> = {}): TrendingRespon
 function makeAvailability(
   overrides: Partial<TrendingAvailabilityResponse> = {}
 ): TrendingAvailabilityResponse {
-  return { window_days: DEFAULT_WINDOW_DAYS, available: {}, ...overrides }
+  return { window_days: DEFAULT_WINDOW_DAYS, mode: DEFAULT_MODE, available: {}, ...overrides }
+}
+
+function renderUseTrending(initialEntry = '/') {
+  function wrapper({ children }: { children: ReactNode }) {
+    return <MemoryRouter initialEntries={[initialEntry]}>{children}</MemoryRouter>
+  }
+  return renderHook(() => useTrending(), { wrapper })
 }
 
 beforeEach(() => {
@@ -53,17 +64,18 @@ beforeEach(() => {
 })
 
 describe('useTrending', () => {
-  it('starts on the default specialty/window and loads both on mount', async () => {
+  it('starts on the default specialty/mode/window and loads both on mount', async () => {
     // Arrange & Act
-    const { result } = renderHook(() => useTrending())
+    const { result } = renderUseTrending()
 
     // Assert
     expect(result.current.specialty).toBe(DEFAULT_SPECIALTY)
+    expect(result.current.mode).toBe(DEFAULT_MODE)
     expect(result.current.windowDays).toBe(DEFAULT_WINDOW_DAYS)
     expect(result.current.status).toBe('loading')
     await waitFor(() => expect(result.current.status).toBe('success'))
-    expect(mockedGetTrending).toHaveBeenCalledWith(DEFAULT_SPECIALTY, DEFAULT_WINDOW_DAYS)
-    expect(mockedGetTrendingAvailability).toHaveBeenCalledWith(DEFAULT_WINDOW_DAYS)
+    expect(mockedGetTrending).toHaveBeenCalledWith(DEFAULT_SPECIALTY, DEFAULT_MODE, DEFAULT_WINDOW_DAYS)
+    expect(mockedGetTrendingAvailability).toHaveBeenCalledWith(DEFAULT_MODE, DEFAULT_WINDOW_DAYS)
   })
 
   it('exposes the fetched articles and freshness timestamp on success', async () => {
@@ -73,7 +85,7 @@ describe('useTrending', () => {
     )
 
     // Act
-    const { result } = renderHook(() => useTrending())
+    const { result } = renderUseTrending()
     await waitFor(() => expect(result.current.status).toBe('success'))
 
     // Assert
@@ -86,7 +98,7 @@ describe('useTrending', () => {
     // Arrange
     mockedGetTrending.mockRejectedValueOnce(new Error('API error: 502'))
     mockedGetTrending.mockResolvedValueOnce(makeResponse())
-    const { result } = renderHook(() => useTrending())
+    const { result } = renderUseTrending()
     await waitFor(() => expect(result.current.status).toBe('error'))
 
     // Act
@@ -96,10 +108,10 @@ describe('useTrending', () => {
     await waitFor(() => expect(result.current.status).toBe('success'))
   })
 
-  it('switching specialty flips back to loading and refetches for the new specialty at the current window', async () => {
+  it('switching specialty flips back to loading and refetches for the new specialty at the current mode/window', async () => {
     // Arrange
     const secondSpecialty = SPECIALTIES[1].key
-    const { result } = renderHook(() => useTrending())
+    const { result } = renderUseTrending()
     await waitFor(() => expect(result.current.status).toBe('success'))
     mockedGetTrending.mockResolvedValue(makeResponse({ specialty: secondSpecialty }))
 
@@ -110,7 +122,7 @@ describe('useTrending', () => {
     expect(result.current.status).toBe('loading')
     expect(result.current.specialty).toBe(secondSpecialty)
     await waitFor(() => expect(result.current.status).toBe('success'))
-    expect(mockedGetTrending).toHaveBeenLastCalledWith(secondSpecialty, DEFAULT_WINDOW_DAYS)
+    expect(mockedGetTrending).toHaveBeenLastCalledWith(secondSpecialty, DEFAULT_MODE, DEFAULT_WINDOW_DAYS)
   })
 
   it('ignores a stale response from a superseded specialty switch', async () => {
@@ -121,7 +133,7 @@ describe('useTrending', () => {
         resolveFirst = resolve
       })
     )
-    const { result } = renderHook(() => useTrending())
+    const { result } = renderUseTrending()
     const secondSpecialty = SPECIALTIES[1].key
     mockedGetTrending.mockResolvedValueOnce(makeResponse({ specialty: secondSpecialty }))
 
@@ -135,9 +147,9 @@ describe('useTrending', () => {
     expect(result.current.status).toBe('success')
   })
 
-  it('switching the time range never changes the currently selected specialty', async () => {
+  it('switching the time range never changes the currently selected specialty or mode', async () => {
     // Arrange
-    const { result } = renderHook(() => useTrending())
+    const { result } = renderUseTrending()
     await waitFor(() => expect(result.current.status).toBe('success'))
     const newWindow = TIME_RANGES[0].days
 
@@ -145,15 +157,16 @@ describe('useTrending', () => {
     act(() => result.current.setWindowDays(newWindow))
     await waitFor(() => expect(result.current.status).toBe('success'))
 
-    // Assert — the range changed, the specialty stayed exactly as it was
+    // Assert — the range changed, specialty/mode stayed exactly as they were
     expect(result.current.windowDays).toBe(newWindow)
     expect(result.current.specialty).toBe(DEFAULT_SPECIALTY)
-    expect(mockedGetTrending).toHaveBeenLastCalledWith(DEFAULT_SPECIALTY, newWindow)
+    expect(result.current.mode).toBe(DEFAULT_MODE)
+    expect(mockedGetTrending).toHaveBeenLastCalledWith(DEFAULT_SPECIALTY, DEFAULT_MODE, newWindow)
   })
 
   it('switching the time range flips to loading and re-fetches availability for the new range', async () => {
     // Arrange
-    const { result } = renderHook(() => useTrending())
+    const { result } = renderUseTrending()
     await waitFor(() => expect(result.current.status).toBe('success'))
     const newWindow = TIME_RANGES[3].days
 
@@ -163,7 +176,73 @@ describe('useTrending', () => {
     // Assert
     expect(result.current.status).toBe('loading')
     await waitFor(() => expect(result.current.status).toBe('success'))
-    expect(mockedGetTrendingAvailability).toHaveBeenLastCalledWith(newWindow)
+    expect(mockedGetTrendingAvailability).toHaveBeenLastCalledWith(DEFAULT_MODE, newWindow)
+  })
+
+  it('switching mode flips back to loading and refetches trending + availability for the new mode', async () => {
+    // Arrange
+    const newMode = TRENDING_MODES[1].key
+    const { result } = renderUseTrending()
+    await waitFor(() => expect(result.current.status).toBe('success'))
+    mockedGetTrending.mockResolvedValue(makeResponse({ mode: newMode }))
+
+    // Act
+    act(() => result.current.setMode(newMode))
+
+    // Assert
+    expect(result.current.status).toBe('loading')
+    expect(result.current.mode).toBe(newMode)
+    await waitFor(() => expect(result.current.status).toBe('success'))
+    expect(mockedGetTrending).toHaveBeenLastCalledWith(DEFAULT_SPECIALTY, newMode, DEFAULT_WINDOW_DAYS)
+    expect(mockedGetTrendingAvailability).toHaveBeenLastCalledWith(newMode, DEFAULT_WINDOW_DAYS)
+  })
+
+  it('switching mode never changes the currently selected specialty or window', async () => {
+    // Arrange
+    const newMode = TRENDING_MODES[2].key
+    const newWindow = TIME_RANGES[0].days
+    const { result } = renderUseTrending()
+    await waitFor(() => expect(result.current.status).toBe('success'))
+    act(() => result.current.setWindowDays(newWindow))
+    await waitFor(() => expect(result.current.status).toBe('success'))
+
+    // Act
+    act(() => result.current.setMode(newMode))
+    await waitFor(() => expect(result.current.status).toBe('success'))
+
+    // Assert
+    expect(result.current.specialty).toBe(DEFAULT_SPECIALTY)
+    expect(result.current.windowDays).toBe(newWindow)
+  })
+
+  it('reads specialty/mode/window from the URL on mount, for a bookmarked/shared link', async () => {
+    // Arrange
+    const specialty = SPECIALTIES[1].key
+    const mode = TRENDING_MODES[1].key
+    const windowDays = TIME_RANGES[0].days
+
+    // Act
+    const { result } = renderUseTrending(
+      `/?specialty=${specialty}&mode=${mode}&window_days=${windowDays}`
+    )
+    await waitFor(() => expect(result.current.status).toBe('success'))
+
+    // Assert
+    expect(result.current.specialty).toBe(specialty)
+    expect(result.current.mode).toBe(mode)
+    expect(result.current.windowDays).toBe(windowDays)
+    expect(mockedGetTrending).toHaveBeenCalledWith(specialty, mode, windowDays)
+  })
+
+  it('falls back to defaults for an invalid/stale value in the URL', async () => {
+    // Arrange & Act
+    const { result } = renderUseTrending('/?specialty=not_a_real_specialty&mode=bogus&window_days=999')
+    await waitFor(() => expect(result.current.status).toBe('success'))
+
+    // Assert
+    expect(result.current.specialty).toBe(DEFAULT_SPECIALTY)
+    expect(result.current.mode).toBe(DEFAULT_MODE)
+    expect(result.current.windowDays).toBe(DEFAULT_WINDOW_DAYS)
   })
 
   it('exposes specialties known to be empty at the current window as disabled', async () => {
@@ -174,7 +253,7 @@ describe('useTrending', () => {
     )
 
     // Act
-    const { result } = renderHook(() => useTrending())
+    const { result } = renderUseTrending()
     await waitFor(() => expect(result.current.status).toBe('success'))
 
     // Assert
@@ -187,7 +266,7 @@ describe('useTrending', () => {
     mockedGetTrendingAvailability.mockRejectedValue(new Error('API error: 500'))
 
     // Act
-    const { result } = renderHook(() => useTrending())
+    const { result } = renderUseTrending()
     await waitFor(() => expect(result.current.status).toBe('success'))
 
     // Assert — best-effort only, never blocks or breaks the page

@@ -43,18 +43,6 @@ def test_get_trending_rejects_unsupported_window_days():
         assert response.status_code == 422
 
 
-def test_get_trending_rejects_unknown_mode():
-    # Arrange
-    with TestClient(app) as client:
-        # Act
-        response = client.get(
-            "/api/trending/", params={"specialty": "cardiology", "mode": "bogus_mode"}
-        )
-
-        # Assert
-        assert response.status_code == 422
-
-
 def test_get_trending_returns_ranked_results_for_a_real_specialty():
     # Arrange — first-ever request for this specialty computes live, so this
     # test hits real PubMed + Semantic Scholar, mirroring test_search.py's style.
@@ -67,7 +55,6 @@ def test_get_trending_returns_ranked_results_for_a_real_specialty():
         # Assert
         assert response.status_code == 200
         assert data["specialty"] == "cardiology"
-        assert data["mode"] == "trending"
         assert data["window_days"] == 365
         assert "computed_at" in data
         # A non-empty assertion here matters: it's what catches a citation

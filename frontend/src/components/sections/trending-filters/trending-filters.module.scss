@@ -1,0 +1,65 @@
+@use '@/styles/_variables.scss' as *;
+@use '@/styles/_mixins.scss' as *;
+
+.wrapper {
+  width: 100%;
+
+  @include desktop {
+    width: 15rem;
+    flex-shrink: 0;
+  }
+}
+
+.toggle {
+  width: 100%;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid $gray-400;
+  border-radius: 0.5rem;
+  background: $surface;
+  color: $clinical-blue;
+  font-family: $font-body;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: $transition-base;
+
+  &:hover {
+    border-color: $clinical-blue;
+    background: rgba(41, 115, 193, 0.06);
+  }
+
+  @include desktop {
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+.panel {
+  display: none;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 0.75rem;
+
+  &[data-expanded='true'] {
+    display: flex;
+  }
+
+  @include desktop {
+    display: flex;
+    margin-top: 0;
+    position: sticky;
+    top: 1.5rem;
+  }
+}
+
+.sectionHeading {
+  font-family: $font-body;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: $gray-600;
+  margin-bottom: 0.5rem;
+}

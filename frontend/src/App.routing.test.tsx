@@ -32,12 +32,17 @@ beforeEach(() => {
   jest.mocked(getTrending).mockReset()
   jest.mocked(getTrending).mockResolvedValue({
     specialty: 'cardiology',
+    mode: 'trending',
     window_days: 365,
     computed_at: '2026-01-01T00:00:00Z',
     results: [],
   })
   jest.mocked(getTrendingAvailability).mockReset()
-  jest.mocked(getTrendingAvailability).mockResolvedValue({ window_days: 365, available: {} })
+  jest.mocked(getTrendingAvailability).mockResolvedValue({
+    window_days: 365,
+    mode: 'trending',
+    available: {},
+  })
   sessionStorage.clear()
   navigateTo('/')
 })

@@ -222,6 +222,15 @@ describe('ArticleCard', () => {
     expect(screen.getByText(/^1 citation ·/)).toBeInTheDocument()
   })
 
+  it('renders just the citation count with no velocity text when velocity is not provided', () => {
+    // Arrange & Act — Most Cited / New & Notable modes omit velocity
+    renderCard({}, false, { count: 14 })
+
+    // Assert
+    expect(screen.getByText('14 citations')).toBeInTheDocument()
+    expect(screen.queryByText(/velocity/i)).not.toBeInTheDocument()
+  })
+
   it('has no automatically detectable accessibility violations when collapsed', async () => {
     // Arrange
     const { container } = renderCard()

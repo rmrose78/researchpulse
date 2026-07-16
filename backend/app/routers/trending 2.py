@@ -16,28 +16,21 @@ async def get_trending(
         trending_service.DEFAULT_WINDOW_DAYS,
         description="Time range in days — one of 60, 180, 365, 730",
     ),
-    mode: str = Query(
-        trending_service.DEFAULT_MODE,
-        description="One of 'trending', 'most_cited', 'new_notable'",
-    ),
     db: Session = Depends(get_db),
 ):
     try:
         snapshot = await trending_service.get_trending(
-            db, request.app.state.http_client, specialty, window_days, mode
+            db, request.app.state.http_client, specialty, window_days
         )
     except trending_service.UnknownSpecialtyError as e:
         raise HTTPException(status_code=422, detail=str(e))
     except trending_service.InvalidWindowError as e:
-        raise HTTPException(status_code=422, detail=str(e))
-    except trending_service.UnknownModeError as e:
         raise HTTPException(status_code=422, detail=str(e))
     except httpx.HTTPError as e:
         raise HTTPException(status_code=502, detail=f"Trending data unavailable: {str(e)}")
 
     return TrendingResponse(
         specialty=snapshot.specialty,
-        mode=snapshot.mode,
         window_days=snapshot.window_days,
         computed_at=snapshot.computed_at,
         results=snapshot.payload,
@@ -50,14 +43,10 @@ async def get_trending_availability(
         trending_service.DEFAULT_WINDOW_DAYS,
         description="Time range in days — one of 60, 180, 365, 730",
     ),
-    mode: str = Query(
-        trending_service.DEFAULT_MODE,
-        description="One of 'trending', 'most_cited', 'new_notable'",
-    ),
     db: Session = Depends(get_db),
 ):
     # Cache-only lookup — never triggers a PubMed/Semantic Scholar call, so
     # the frontend can call this freely (e.g. on every time-range change)
     # without any rate-limit risk.
-    available = trending_service.list_cached_availability(db, window_days, mode)
-    return TrendingAvailabilityResponse(window_days=window_days, mode=mode, available=available)
+    available = trending_service.list_cached_availability(db, window_days)
+    return TrendingAvailabilityResponse(window_days=window_days, available=available)

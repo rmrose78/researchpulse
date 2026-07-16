@@ -3,45 +3,47 @@
 
 .group {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.5rem;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .option {
-  padding: 0.5rem 1rem;
-  border: 1px solid $gray-400;
-  border-radius: 999px;
-  background: $white;
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-left: 3px solid transparent;
+  border-radius: 4px;
+  background: transparent;
   color: $gray-800;
   font-family: $font-body;
-  font-weight: 600;
-  font-size: 0.85rem;
+  font-weight: 500;
+  font-size: 0.9rem;
   transition: $transition-base;
 
   &:hover {
-    border-color: $clinical-blue;
+    background: $bg;
   }
 
   &:focus-visible {
     outline: 2px solid $clinical-blue;
-    outline-offset: 2px;
+    outline-offset: -2px;
   }
 
   &[data-selected='true'] {
-    border-color: $clinical-blue;
-    background: $clinical-blue;
-    color: $white;
+    border-left-color: $clinical-blue;
+    background: rgba(41, 115, 193, 0.08);
+    color: $clinical-blue;
+    font-weight: 600;
   }
 
   &[data-disabled='true'] {
-    border-color: $gray-400;
-    background: $bg;
     color: $gray-400;
     cursor: not-allowed;
 
     &:hover {
-      border-color: $gray-400;
+      background: transparent;
     }
   }
 

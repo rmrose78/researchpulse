@@ -106,12 +106,13 @@ describe('searchArticles', () => {
 })
 
 describe('getTrending', () => {
-  it('sends the specialty and window_days as query params', async () => {
+  it('sends the specialty, mode, and window_days as query params', async () => {
     // Arrange
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
         specialty: 'cardiology',
+        mode: 'trending',
         window_days: 365,
         computed_at: '2024-01-01T00:00:00Z',
         results: [],
@@ -119,10 +120,11 @@ describe('getTrending', () => {
     }) as jest.Mock
 
     // Act
-    await getTrending('cardiology', 365)
+    await getTrending('cardiology', 'trending', 365)
 
     // Assert
     expect(calledParams().get('specialty')).toBe('cardiology')
+    expect(calledParams().get('mode')).toBe('trending')
     expect(calledParams().get('window_days')).toBe('365')
   })
 
@@ -131,22 +133,23 @@ describe('getTrending', () => {
     global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 422 }) as jest.Mock
 
     // Act & Assert
-    await expect(getTrending('not_real', 365)).rejects.toThrow('422')
+    await expect(getTrending('not_real', 'trending', 365)).rejects.toThrow('422')
   })
 })
 
 describe('getTrendingAvailability', () => {
-  it('sends window_days as a query param', async () => {
+  it('sends mode and window_days as query params', async () => {
     // Arrange
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ window_days: 365, available: {} }),
+      json: async () => ({ window_days: 365, mode: 'trending', available: {} }),
     }) as jest.Mock
 
     // Act
-    await getTrendingAvailability(365)
+    await getTrendingAvailability('trending', 365)
 
     // Assert
+    expect(calledParams().get('mode')).toBe('trending')
     expect(calledParams().get('window_days')).toBe('365')
   })
 
@@ -155,6 +158,6 @@ describe('getTrendingAvailability', () => {
     global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 500 }) as jest.Mock
 
     // Act & Assert
-    await expect(getTrendingAvailability(365)).rejects.toThrow('500')
+    await expect(getTrendingAvailability('trending', 365)).rejects.toThrow('500')
   })
 })

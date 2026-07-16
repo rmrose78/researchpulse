@@ -4,8 +4,7 @@ import ArticleList from '@/components/sections/article-list/article-list'
 import SearchSkeleton from '@/components/sections/search-skeleton/search-skeleton'
 import EmptyState from '@/components/sections/empty-state/empty-state'
 import ErrorState from '@/components/sections/error-state/error-state'
-import SpecialtySelector from '@/components/sections/specialty-selector/specialty-selector'
-import TimeRangeSelector from '@/components/sections/time-range-selector/time-range-selector'
+import TrendingFilters from '@/components/sections/trending-filters/trending-filters'
 import VelocityExplainer from '@/components/sections/velocity-explainer/velocity-explainer'
 import { useTrending } from '@/hooks/use-trending'
 import { formatRelativeTime } from '@/utils/format'
@@ -16,6 +15,8 @@ export default function TrendingPage() {
   const {
     specialty,
     setSpecialty,
+    mode,
+    setMode,
     windowDays,
     setWindowDays,
     status: trendingStatus,
@@ -28,37 +29,45 @@ export default function TrendingPage() {
   const citationStats = useMemo(() => {
     const map: Record<string, CitationStat> = {}
     for (const article of trendingArticles) {
-      map[article.pmid] = { count: article.citation_count, velocity: article.velocity }
+      map[article.pmid] =
+        mode === 'trending'
+          ? { count: article.citation_count, velocity: article.velocity }
+          : { count: article.citation_count }
     }
     return map
-  }, [trendingArticles])
+  }, [trendingArticles, mode])
 
   return (
     <Hero>
-      <section className={styles.trendingContent} aria-label="Trending">
-        <SpecialtySelector
-          selected={specialty}
-          onSelect={setSpecialty}
+      <section className={styles.trendingLayout} aria-label="Trending">
+        <TrendingFilters
+          mode={mode}
+          onModeSelect={setMode}
+          specialty={specialty}
+          onSpecialtySelect={setSpecialty}
           disabledSpecialties={disabledSpecialties}
+          windowDays={windowDays}
+          onWindowDaysSelect={setWindowDays}
         />
-        <TimeRangeSelector selected={windowDays} onSelect={setWindowDays} />
-        {computedAt && (
-          <div className={styles.freshnessRow}>
-            <p className={styles.freshness}>
-              Updated {formatRelativeTime(computedAt)} · via Semantic Scholar
-            </p>
-            <VelocityExplainer />
+        <div className={styles.trendingMain}>
+          {computedAt && (
+            <div className={styles.freshnessRow}>
+              <p className={styles.freshness}>
+                Updated {formatRelativeTime(computedAt)} · via Semantic Scholar
+              </p>
+              {mode === 'trending' && <VelocityExplainer />}
+            </div>
+          )}
+          <div aria-live="polite" className={styles.trendingResults}>
+            {trendingStatus === 'loading' && <SearchSkeleton />}
+            {trendingStatus === 'success' && trendingArticles.length === 0 && (
+              <EmptyState message="No trending articles found for this specialty at this time range — try a wider range." />
+            )}
+            {trendingStatus === 'success' && trendingArticles.length > 0 && (
+              <ArticleList articles={trendingArticles} citationStats={citationStats} />
+            )}
+            {trendingStatus === 'error' && <ErrorState onRetry={retryTrending} />}
           </div>
-        )}
-        <div aria-live="polite" className={styles.trendingResults}>
-          {trendingStatus === 'loading' && <SearchSkeleton />}
-          {trendingStatus === 'success' && trendingArticles.length === 0 && (
-            <EmptyState message="No trending articles found for this specialty at this time range — try a wider range." />
-          )}
-          {trendingStatus === 'success' && trendingArticles.length > 0 && (
-            <ArticleList articles={trendingArticles} citationStats={citationStats} />
-          )}
-          {trendingStatus === 'error' && <ErrorState onRetry={retryTrending} />}
         </div>
       </section>
     </Hero>
