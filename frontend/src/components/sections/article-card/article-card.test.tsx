@@ -26,6 +26,7 @@ function makeArticle(overrides: Partial<ArticleSearchResult> = {}): ArticleSearc
     journal: 'Journal of Cardiology',
     pub_date: '2026-01-15',
     doi: null,
+    publication_types: [],
     ...overrides,
   }
 }
@@ -33,7 +34,8 @@ function makeArticle(overrides: Partial<ArticleSearchResult> = {}): ArticleSearc
 function renderCard(
   overrides: Partial<ArticleSearchResult> = {},
   isSaved = false,
-  citationStat?: CitationStat
+  citationStat?: CitationStat,
+  notableType?: string
 ) {
   return render(
     <ArticleCard
@@ -41,6 +43,7 @@ function renderCard(
       isSaved={isSaved}
       onSaveToggle={jest.fn()}
       citationStat={citationStat}
+      notableType={notableType}
     />
   )
 }
@@ -229,6 +232,22 @@ describe('ArticleCard', () => {
     // Assert
     expect(screen.getByText('14 citations')).toBeInTheDocument()
     expect(screen.queryByText(/velocity/i)).not.toBeInTheDocument()
+  })
+
+  it('renders no evidence-tier badge when notableType is not provided', () => {
+    // Arrange & Act
+    renderCard()
+
+    // Assert
+    expect(screen.queryByText(/randomized controlled trial|meta-analysis|systematic review/i)).not.toBeInTheDocument()
+  })
+
+  it('renders an evidence-tier badge when notableType is provided', () => {
+    // Arrange & Act
+    renderCard({}, false, undefined, 'Randomized Controlled Trial')
+
+    // Assert
+    expect(screen.getByText('Randomized Controlled Trial')).toBeInTheDocument()
   })
 
   it('has no automatically detectable accessibility violations when collapsed', async () => {

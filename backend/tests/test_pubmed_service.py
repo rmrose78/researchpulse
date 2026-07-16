@@ -93,3 +93,60 @@ async def test_search_combines_journal_and_date_filters():
     assert term == (
         'cardiac AND "The Lancet"[journal] AND 2024/01/01:2024/12/31[Date - Publication]'
     )
+
+
+ARTICLE_WITH_PUBLICATION_TYPES_XML = """
+<PubmedArticleSet>
+  <PubmedArticle>
+    <MedlineCitation>
+      <PMID>12345</PMID>
+      <Article>
+        <Journal><Title>Test Journal</Title></Journal>
+        <ArticleTitle>Test Title</ArticleTitle>
+        <Abstract><AbstractText>Some abstract</AbstractText></Abstract>
+        <PublicationTypeList>
+          <PublicationType UI="D016449">Randomized Controlled Trial</PublicationType>
+          <PublicationType UI="D016428">Journal Article</PublicationType>
+        </PublicationTypeList>
+      </Article>
+    </MedlineCitation>
+  </PubmedArticle>
+</PubmedArticleSet>
+"""
+
+ARTICLE_WITHOUT_PUBLICATION_TYPES_XML = """
+<PubmedArticleSet>
+  <PubmedArticle>
+    <MedlineCitation>
+      <PMID>67890</PMID>
+      <Article>
+        <Journal><Title>Test Journal</Title></Journal>
+        <ArticleTitle>Test Title</ArticleTitle>
+        <Abstract><AbstractText>Some abstract</AbstractText></Abstract>
+      </Article>
+    </MedlineCitation>
+  </PubmedArticle>
+</PubmedArticleSet>
+"""
+
+
+def test_parse_articles_extracts_publication_types():
+    # Arrange
+    service = PubMedService()
+
+    # Act
+    articles = service._parse_articles(ARTICLE_WITH_PUBLICATION_TYPES_XML)
+
+    # Assert
+    assert articles[0].publication_types == ["Randomized Controlled Trial", "Journal Article"]
+
+
+def test_parse_articles_defaults_publication_types_to_empty_list_when_absent():
+    # Arrange
+    service = PubMedService()
+
+    # Act
+    articles = service._parse_articles(ARTICLE_WITHOUT_PUBLICATION_TYPES_XML)
+
+    # Assert
+    assert articles[0].publication_types == []

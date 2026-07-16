@@ -6,6 +6,7 @@ from app.schemas.pubmed import ArticleSearchResult
 class TrendingArticle(ArticleSearchResult):
     citation_count: int
     velocity: float
+    notable_type: str | None = None
 
 
 class TrendingResponse(BaseModel):

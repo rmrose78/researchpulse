@@ -10,6 +10,7 @@ interface ArticleCardProps {
   isSaved: boolean
   onSaveToggle: (article: ArticleSearchResult) => void
   citationStat?: CitationStat
+  notableType?: string
 }
 
 const ANIMATION_TRANSITION = { type: 'tween', duration: 0.2, ease: 'easeInOut' } as const
@@ -24,6 +25,7 @@ export default function ArticleCard({
   isSaved,
   onSaveToggle,
   citationStat,
+  notableType,
 }: ArticleCardProps) {
   const [expanded, setExpanded] = useState(false)
   const abstractId = useId()
@@ -37,7 +39,10 @@ export default function ArticleCard({
   return (
     <article className={styles.card}>
       <div className={styles.header}>
-        <h3 className={styles.title}>{article.title}</h3>
+        <div className={styles.titleGroup}>
+          {notableType && <span className={styles.notableBadge}>{notableType}</span>}
+          <h3 className={styles.title}>{article.title}</h3>
+        </div>
         <button
           type="button"
           className={styles.saveToggle}

@@ -18,6 +18,7 @@ function toArticleSearchResult(saved: SavedArticle): ArticleSearchResult {
     journal: saved.journal,
     pub_date: saved.pub_date,
     doi: saved.doi,
+    publication_types: [],
   }
 }
 

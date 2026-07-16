@@ -1,4 +1,4 @@
-import { Database, Filter, RefreshCw, TrendingUp } from 'lucide-react'
+import { Award, Database, Filter, RefreshCw, TrendingUp } from 'lucide-react'
 import styles from './how-it-works-page.module.scss'
 
 export default function HowItWorksPage() {
@@ -54,6 +54,31 @@ export default function HowItWorksPage() {
             article with 5 citations scores meaningfully higher (
             <code className={styles.chip}>5 ÷ 81 ≈ 0.06</code>) — favoring articles that have had
             real time to accumulate citations over an early, possibly lucky one.
+          </p>
+        </article>
+
+        <article className={styles.card}>
+          <div className={styles.cardHeader}>
+            <Award size={20} aria-hidden="true" className={styles.icon} />
+            <h2 className={styles.cardTitle}>Notability</h2>
+          </div>
+          <p>
+            New &amp; Notable is sorted by publication date, but a date alone doesn&rsquo;t say
+            anything about how much weight to put on a brand-new finding — so we add a real
+            signal: the kind of study it is, straight from PubMed&rsquo;s own metadata.
+          </p>
+          <p className={styles.formulaLine}>
+            <code className={styles.chip}>Meta-Analysis / Systematic Review</code>
+            {' > '}
+            <code className={styles.chip}>Randomized Controlled Trial</code>
+            {' > '}
+            <code className={styles.chip}>Clinical Trial / Multicenter / Comparative Study</code>
+          </p>
+          <p>
+            This mirrors the evidence hierarchy used in clinical practice. Articles matching one
+            of these types get a badge and rank above everything else in the window; other
+            articles (plain journal articles, case reports, editorials) show no badge and fall
+            back to recency order.
           </p>
         </article>
 

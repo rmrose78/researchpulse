@@ -122,7 +122,12 @@ class PubMedService:
             for id_elem in article.findall(".//ArticleId"):
                 if id_elem.get("IdType") == "doi":
                     doi = id_elem.text
-            
+
+            publication_types = [
+                pt.text for pt in article.findall(".//PublicationTypeList/PublicationType")
+                if pt.text
+            ]
+
             articles.append(ArticleSearchResult(
                 pmid=pmid,
                 title=title,
@@ -131,6 +136,7 @@ class PubMedService:
                 journal=journal,
                 pub_date=pub_date,
                 doi=doi,
+                publication_types=publication_types,
             ))
 
         return articles
@@ -188,6 +194,11 @@ class PubMedService:
             for kw in article.findall(".//Keyword")
         ]
 
+        publication_types = [
+            pt.text for pt in article.findall(".//PublicationTypeList/PublicationType")
+            if pt.text
+        ]
+
         return ArticleDetail(
             pmid=pmid_val,
             title=title,
@@ -198,6 +209,7 @@ class PubMedService:
             doi=doi,
             mesh_terms=[m for m in mesh_terms if m],
             keywords=[k for k in keywords if k],
+            publication_types=publication_types,
         )
 
     # Singleton instance - import this everywhere
