@@ -82,17 +82,29 @@ the Fort Meade, Maryland area (Leidos, Booz Allen).
 ---
 
 ## Current Priority
-Phase 1 backend is complete. Starting React frontend using vertical slice workflow.
+Phase 1 (Core search + reading list) is complete, frontend and backend both.
+Phase 2 (Trending) is in progress — citation-velocity rankings, all three
+ranking modes, and the specialty/mode/time-range filter rail are built.
 
-Completed backend:
+Completed:
 - GET /health ✅
 - GET /api/search/ ✅
 - GET /api/search/{pmid} ✅
 - POST /api/reading-list/ ✅
 - GET /api/reading-list/ ✅
 - DELETE /api/reading-list/{pmid} ✅
+- GET /api/trending/ (modes: trending, most_cited, new_notable) ✅
+- GET /api/trending/availability ✅
+- Trending page: PubMed-style left filter rail (Mode / Specialty / Time
+  Range), mobile hamburger nav ✅
 
-Next: Run /grill-me to start frontend search UI feature
+Issue #13 (Most Cited / New & Notable modes) is built and passing all
+tests/visual verification but not yet committed or closed — check with the
+developer before assuming it's merged.
+
+Next open issues (see `docs/issues/trending/`): #14 Rank-Movement Badges,
+#15 "Why It's Trending" + Reading List Crossover, #16 Sticky Specialty/Mode
+Selection.
 
 ---
 

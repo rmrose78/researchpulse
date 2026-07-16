@@ -11,10 +11,10 @@ plain English for clinicians, health IT analysts, and policy professionals
 who need to act on research, not just find it.
 
 ## Status
-**Active development** — Phase 1 (Core) complete, frontend in progress
+**Active development** — Phase 1 (Core) complete, Phase 2 (Trending) in progress
 
 ## Tech Stack
-- **Frontend:** React 19 + TypeScript + Vite 8
+- **Frontend:** React 19 + TypeScript + Vite 8, React Router 7, Radix UI, Framer Motion
 - **Backend:** FastAPI + Pydantic V2 + SQLAlchemy
 - **Database:** PostgreSQL 16
 - **Hosting:** Netlify (frontend) + Railway (backend)
@@ -23,14 +23,20 @@ who need to act on research, not just find it.
 ## Features
 ### Phase 1 — Core (complete)
 - Search PubMed by keyword with date and journal filters
+- Inline abstract expansion and load-more pagination on search results
 - View full article details including MeSH terms and keywords
 - Save articles to a personal reading list
 
-### Phase 2 — Trending (planned)
+### Phase 2 — Trending (in progress)
 - Citation velocity algorithm to surface trending research
-- Three modes: Trending, Most Cited, New & Notable
+- Three modes, all built: Trending, Most Cited, New & Notable
+- Left filter rail for Mode / Specialty / Time Range, with a
+  mobile hamburger nav
 - Powered by Semantic Scholar API
-- Results cached on the backend to minimize API calls
+- Results cached per specialty/mode/time-window on the backend to minimize
+  API calls
+- Remaining: rank-movement badges, "why it's trending" + reading list
+  crossover, sticky specialty/mode selection across visits
 
 ### Phase 3 — AI Summarization (planned)
 - Plain-English summaries of article abstracts
@@ -63,9 +69,9 @@ before any code is written
 backend, frontend) and delivers something visible and testable. No
 horizontal slicing.
 
-**Custom skills** live in `.claude/skills/workflow-v1/` and are designed
-to work in air-gapped environments — plain markdown files with no
-external dependencies.
+**Custom skills** live in `.claude/skills/` (`1-grill-me`, `2-to-prd`,
+`3-to-issues`, `4-tdd`) and are designed to work in air-gapped
+environments — plain markdown files with no external dependencies.
 
 ## API Endpoints
 GET    /health                    — health check
@@ -74,6 +80,8 @@ GET    /api/search/{pmid}         — get full article detail
 POST   /api/reading-list/         — save article to reading list
 GET    /api/reading-list/         — get saved articles
 DELETE /api/reading-list/{pmid}   — remove saved article
+GET    /api/trending/             — trending articles by specialty/mode/window
+GET    /api/trending/availability — cache availability for a given filter combo
 
 ## Running Locally
 

@@ -1,13 +1,27 @@
 # Phases
 
-### Phase 1 — Core (in progress)
+### Phase 1 — Core (complete)
 Search PubMed, view article details, save to reading list.
 Not the differentiator — required foundation.
 
-### Phase 2 — Trending (the differentiator)
-Citation velocity algorithm: `velocity = total_citations / article_age_in_days`
-Three modes: Trending, Most Cited, New & Notable.
-Semantic Scholar for citation data. Results cached on backend.
+### Phase 2 — Trending (the differentiator, in progress)
+Citation velocity algorithm: `velocity = total_citations / (article_age_in_days + 21)`
+Three modes: Trending, Most Cited, New & Notable — all three built.
+Semantic Scholar for citation data. Results cached per specialty/mode/window
+in `trending_snapshots`, with a slice-sampling pool architecture to keep
+results deep across wide time ranges.
+
+Done:
+- Routing foundation, reading list save/remove/view
+- Trending mode by specialty, with citation-velocity ranking
+- Most Cited and New & Notable modes
+- PubMed-style left filter rail (Mode / Specialty / Time Range)
+- Mobile hamburger nav
+
+Remaining:
+- Rank-movement badges
+- "Why it's trending" line + reading list crossover
+- Sticky specialty/mode selection across visits
 
 ### Phase 3 — AI Summarization (accessibility layer)
 Plain-English summaries via Anthropic API.

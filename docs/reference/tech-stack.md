@@ -9,15 +9,18 @@
 
 ### Frontend
 - React 19 + TypeScript + Vite 8
+- React Router 7 (`react-router-dom`) — routing, and `useSearchParams` for
+  shareable/bookmarkable filter state
 - SCSS modules — one `.module.scss` per component, no exceptions
 - NO Tailwind — pure SCSS modules only
 - Radix UI for accessible primitives (Dialog, etc.)
 - Framer Motion for animations
-- Jest + React Testing Library for tests
+- lucide-react for icons
+- Jest + React Testing Library for tests, jest-axe for a11y checks
 
 ### External APIs
 - PubMed NCBI E-utilities — search and article data
-- Semantic Scholar — citation counts for velocity algorithm (Phase 2)
+- Semantic Scholar — citation counts for velocity algorithm (Phase 2, in use)
 - Anthropic API — AI summarization (Phase 3)
 
 ### Hosting
