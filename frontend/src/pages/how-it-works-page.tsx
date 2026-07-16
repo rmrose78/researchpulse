@@ -1,0 +1,74 @@
+import { Database, Filter, RefreshCw, TrendingUp } from 'lucide-react'
+import styles from './how-it-works-page.module.scss'
+
+export default function HowItWorksPage() {
+  return (
+    <section className={styles.section} aria-labelledby="how-it-works-heading">
+      <h1 id="how-it-works-heading" className={styles.heading}>
+        How It Works
+      </h1>
+      <p className={styles.subtitle}>
+        What ResearchPulse pulls from, how trending is ranked, and what the numbers mean.
+      </p>
+
+      <div className={styles.cards}>
+        <article className={styles.card}>
+          <div className={styles.cardHeader}>
+            <Database size={20} aria-hidden="true" className={styles.icon} />
+            <h2 className={styles.cardTitle}>Data Sources</h2>
+          </div>
+          <p>
+            Articles come from <strong>PubMed</strong>, the National Library of Medicine&rsquo;s
+            biomedical literature index. Citation counts come from{' '}
+            <strong>Semantic Scholar</strong>, a free academic graph that links papers to who&rsquo;s
+            citing them.
+          </p>
+        </article>
+
+        <article className={styles.card}>
+          <div className={styles.cardHeader}>
+            <Filter size={20} aria-hidden="true" className={styles.icon} />
+            <h2 className={styles.cardTitle}>Specialties &amp; Time Range</h2>
+          </div>
+          <p>
+            Trending is split into six clinical specialties, each mapped to a MeSH search query.
+            You choose how far back to look — 60 days, 6 months, 1 year, or 2 years — and that
+            choice is exactly what gets queried; results are never silently widened past what you
+            picked.
+          </p>
+        </article>
+
+        <article className={styles.card}>
+          <div className={styles.cardHeader}>
+            <TrendingUp size={20} aria-hidden="true" className={styles.icon} />
+            <h2 className={styles.cardTitle}>Citation Velocity</h2>
+          </div>
+          <p>Velocity measures how fast an article is being cited relative to its age:</p>
+          <p className={styles.formulaLine}>
+            <code className={styles.chip}>citations ÷ (days since publication + 21)</code>
+          </p>
+          <p>
+            The <strong>+21</strong> is a three-week smoothing constant. Without it, a 2-day-old
+            article with a single citation (<code className={styles.chip}>1 ÷ 23 ≈ 0.04</code>)
+            could edge out a more established one purely from a tiny denominator. A 60-day-old
+            article with 5 citations scores meaningfully higher (
+            <code className={styles.chip}>5 ÷ 81 ≈ 0.06</code>) — favoring articles that have had
+            real time to accumulate citations over an early, possibly lucky one.
+          </p>
+        </article>
+
+        <article className={styles.card}>
+          <div className={styles.cardHeader}>
+            <RefreshCw size={20} aria-hidden="true" className={styles.icon} />
+            <h2 className={styles.cardTitle}>Freshness &amp; Caching</h2>
+          </div>
+          <p>
+            Citation data isn&rsquo;t looked up live on every visit. Results are cached for a few
+            hours and refreshed periodically in the background — that&rsquo;s what the &ldquo;Updated
+            X ago&rdquo; note next to the results means.
+          </p>
+        </article>
+      </div>
+    </section>
+  )
+}

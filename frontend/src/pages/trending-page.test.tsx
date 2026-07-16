@@ -1,6 +1,7 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals'
 import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
 import { axe } from 'jest-axe'
 import TrendingPage from './trending-page'
 import ReadingListProvider from '@/components/providers/reading-list-provider'
@@ -35,9 +36,11 @@ function makeTrendingResponse(overrides: Partial<TrendingResponse> = {}): Trendi
 
 async function renderPage() {
   const utils = render(
-    <ReadingListProvider>
-      <TrendingPage />
-    </ReadingListProvider>
+    <MemoryRouter>
+      <ReadingListProvider>
+        <TrendingPage />
+      </ReadingListProvider>
+    </MemoryRouter>
   )
   // Flush the provider's initial getSavedArticles() fetch so its resolution
   // doesn't land after the test (and its act(...) wrapper) has finished.
@@ -117,6 +120,16 @@ describe('TrendingPage', () => {
     expect(await screen.findByRole('heading', { name: /a trending cardiac study/i })).toBeInTheDocument()
     expect(screen.getByText('14 citations · velocity 0.80')).toBeInTheDocument()
     expect(screen.getByText(/updated .* · via semantic scholar/i)).toBeInTheDocument()
+  })
+
+  it('shows a "how is this calculated" trigger next to the freshness line once loaded', async () => {
+    // Arrange & Act
+    await renderPage()
+
+    // Assert
+    expect(
+      await screen.findByRole('button', { name: /how is this calculated/i })
+    ).toBeInTheDocument()
   })
 
   it('shows an empty state when a specialty has no trending results', async () => {

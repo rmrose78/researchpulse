@@ -49,6 +49,14 @@
   max-width: 32rem;
 }
 
+.freshnessRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .freshness {
   font-family: $font-mono;
   font-size: 0.8rem;

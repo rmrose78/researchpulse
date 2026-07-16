@@ -46,6 +46,11 @@ export default function Layout({ children }: LayoutProps) {
                 Reading List
               </NavLink>
             </li>
+            <li>
+              <NavLink to="/how-it-works" className={navLinkClassName}>
+                How It Works
+              </NavLink>
+            </li>
           </ul>
         </nav>
       </header>
@@ -54,6 +59,9 @@ export default function Layout({ children }: LayoutProps) {
       </main>
       <footer className={styles.footer}>
         <p>&copy; {new Date().getFullYear()} ResearchPulse</p>
+        <NavLink to="/how-it-works" className={styles.footerLink}>
+          How It Works
+        </NavLink>
       </footer>
     </div>
   )

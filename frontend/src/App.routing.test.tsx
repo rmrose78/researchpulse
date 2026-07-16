@@ -63,6 +63,17 @@ describe('App routing', () => {
     expect(screen.getByRole('heading', { name: /^reading list$/i })).toBeInTheDocument()
   })
 
+  it('renders the How It Works page at /how-it-works', async () => {
+    // Arrange
+    navigateTo('/how-it-works')
+
+    // Act
+    await renderApp()
+
+    // Assert
+    expect(screen.getByRole('heading', { name: /^how it works$/i })).toBeInTheDocument()
+  })
+
   it('redirects an unknown route back to / (the merged landing page)', async () => {
     // Arrange
     navigateTo('/this-route-does-not-exist')

@@ -8,6 +8,7 @@ import EmptyState from '@/components/sections/empty-state/empty-state'
 import ErrorState from '@/components/sections/error-state/error-state'
 import SpecialtySelector from '@/components/sections/specialty-selector/specialty-selector'
 import TimeRangeSelector from '@/components/sections/time-range-selector/time-range-selector'
+import VelocityExplainer from '@/components/sections/velocity-explainer/velocity-explainer'
 import { useSearch } from '@/hooks/use-search'
 import { useTrending } from '@/hooks/use-trending'
 import { formatRelativeTime } from '@/utils/format'
@@ -114,9 +115,12 @@ export default function TrendingPage() {
           />
           <TimeRangeSelector selected={windowDays} onSelect={setWindowDays} />
           {computedAt && (
-            <p className={styles.freshness}>
-              Updated {formatRelativeTime(computedAt)} · via Semantic Scholar
-            </p>
+            <div className={styles.freshnessRow}>
+              <p className={styles.freshness}>
+                Updated {formatRelativeTime(computedAt)} · via Semantic Scholar
+              </p>
+              <VelocityExplainer />
+            </div>
           )}
           <div aria-live="polite" className={styles.trendingResults}>
             {trendingStatus === 'loading' && <SearchSkeleton />}

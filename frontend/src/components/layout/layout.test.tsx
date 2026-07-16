@@ -1,5 +1,5 @@
 import { describe, it, expect, jest } from '@jest/globals'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { axe } from 'jest-axe'
@@ -56,7 +56,7 @@ describe('Layout', () => {
     expect(brandLink).toHaveAttribute('href', '/')
   })
 
-  it('renders nav links to trending and reading list, with the brand also covering home', () => {
+  it('renders nav links to trending, reading list, and how it works, with the brand also covering home', () => {
     // Arrange
     renderLayout()
 
@@ -66,7 +66,25 @@ describe('Layout', () => {
       'href',
       '/reading-list'
     )
+    const nav = screen.getByRole('navigation', { name: /primary/i })
+    expect(within(nav).getByRole('link', { name: /how it works/i })).toHaveAttribute(
+      'href',
+      '/how-it-works'
+    )
     expect(screen.queryByRole('link', { name: /^search$/i })).not.toBeInTheDocument()
+  })
+
+  it('renders a footer link to how it works alongside the copyright notice', () => {
+    // Arrange
+    renderLayout()
+
+    // Act
+    const footer = screen.getByRole('contentinfo')
+    const footerLink = within(footer).getByRole('link', { name: /how it works/i })
+
+    // Assert
+    expect(footerLink).toHaveAttribute('href', '/how-it-works')
+    expect(footer).toHaveTextContent(/researchpulse/i)
   })
 
   it('marks the brand and the trending link as active via aria-current on the merged trending/search route, and no others', () => {

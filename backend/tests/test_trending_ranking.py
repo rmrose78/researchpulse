@@ -41,11 +41,11 @@ def test_age_days_returns_none_for_unparseable_pub_date():
     assert result is None
 
 
-def test_compute_velocity_uses_age_plus_fourteen_day_smoothing():
+def test_compute_velocity_uses_age_plus_twenty_one_day_smoothing():
     # Arrange & Act
-    result = compute_velocity(citation_count=28, age_in_days=14)
+    result = compute_velocity(citation_count=42, age_in_days=21)
 
-    # Assert — 28 / (14 + 14) == 1.0
+    # Assert — 42 / (21 + 21) == 1.0
     assert result == 1.0
 
 
@@ -54,7 +54,7 @@ def test_compute_velocity_not_raw_citations_over_age():
     smoothed = compute_velocity(citation_count=10, age_in_days=0)
 
     # Assert — raw citations/age would divide by zero; smoothing prevents that
-    assert smoothed == 10 / 14
+    assert smoothed == 10 / 21
 
 
 def _article(pmid: str, pub_date: str | None) -> ArticleSearchResult:
@@ -126,4 +126,4 @@ def test_rank_articles_includes_citation_stat_fields():
 
     # Assert
     assert ranked[0].citation_count == 28
-    assert ranked[0].velocity == 28 / (196 + 14)
+    assert ranked[0].velocity == 28 / (196 + 21)

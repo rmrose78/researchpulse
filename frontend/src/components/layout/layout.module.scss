@@ -123,6 +123,11 @@
 }
 
 .footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   padding: 1.5rem $section-px-mobile;
   text-align: center;
   color: $gray-400;
@@ -130,6 +135,22 @@
   background: $navy;
 
   @include desktop {
+    flex-direction: row;
+    gap: 1.5rem;
     padding: 1.5rem $section-px-desktop;
+  }
+}
+
+.footerLink {
+  color: $gray-400;
+  font-weight: 500;
+  transition: $transition-base;
+
+  &:hover {
+    color: $white;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
   }
 }

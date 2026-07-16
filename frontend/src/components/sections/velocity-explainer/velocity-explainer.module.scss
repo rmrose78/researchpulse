@@ -1,0 +1,57 @@
+@use '@/styles/_variables.scss' as *;
+@use '@/styles/_mixins.scss' as *;
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: $clinical-blue;
+  font-family: $font-mono;
+  font-size: 0.8rem;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $clinical-blue;
+    outline-offset: 2px;
+  }
+}
+
+.formulaLine {
+  margin: 1rem 0;
+}
+
+.chip {
+  display: inline-block;
+  font-family: $font-mono;
+  font-size: 0.85rem;
+  color: $clinical-blue;
+  background: rgba(41, 115, 193, 0.08);
+  border-radius: 6px;
+  padding: 0.15rem 0.5rem;
+}
+
+.link {
+  display: inline-block;
+  margin-top: 0.75rem;
+  color: $clinical-blue;
+  font-weight: 600;
+  font-size: 0.9rem;
+
+  &:hover,
+  &:focus-visible {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $clinical-blue;
+    outline-offset: 2px;
+  }
+}

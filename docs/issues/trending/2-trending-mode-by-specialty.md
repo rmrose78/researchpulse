@@ -10,7 +10,7 @@ This is what makes ResearchPulse different from a plain PubMed search — a cred
 - [x] Specialty selector with 6 categories: Cardiology, Oncology/Cancer, Infectious Disease, Neurology, Alzheimer's & Dementia, Public Health & Policy — each mapped to an explicit MeSH query string
 - [x] `GET /api/trending/` backend endpoint accepts a specialty parameter and returns ranked results for Trending mode
 - [x] Trending pool bounded to a **user-selectable time range** — 60 days / 6 months / 1 year / 2 years, defaulting to 1 year (superseded from the original fixed "last 180 days" — see Follow-up below)
-- [x] Velocity = `citations / (age_days + 14)` — not raw `citations / age_days`
+- [x] Velocity = `citations / (age_days + 21)` — not raw `citations / age_days` (constant tuned from an initial `+14` to `+21` post-ship — see Follow-up below)
 - [x] Semantic Scholar citation data fetched via the **batch** endpoint (`POST /graph/v1/paper/batch`, `PMID:` IDs) — one call per (specialty, time range) computation, never per-article
 - [x] Articles with 0 citations excluded from the ranking
 - [x] Results cached: lazy-computed on first request per (specialty, time range), TTL 8h, served stale-while-revalidate after expiry (never blocks a request on a live recompute except the very first ever for that combination)
@@ -99,3 +99,62 @@ present. Once sampling was fixed to span the full window, this specialty
 returned 22 qualifying articles at the 1-year range (up from ~0-1 under
 the old, buggy sampling). The earlier finding was an artifact of the bug,
 not a real characteristic of the literature.
+
+## Follow-up: Velocity "Learn More" Popup + How It Works Page (post-ship)
+
+The velocity number (`14 citations · velocity 0.80`) shipped with no
+explanation of what it meant. Added:
+- A **"How is this calculated?" trigger** next to the trending page's
+  freshness line ("Updated X ago · via Semantic Scholar"), opening a
+  Radix Dialog (`src/components/ui/modal/`) with a plain-English
+  explanation of the velocity formula and why the smoothing constant
+  exists — first real consumer of the previously-unused
+  `@radix-ui/react-dialog` dependency.
+- A new **`/how-it-works` page** (top nav + footer link) covering the
+  full picture: data sources (PubMed + Semantic Scholar), specialties &
+  time range, citation velocity in full (with a worked numeric example),
+  and freshness/caching — both a durable answer for anyone who wants more
+  than the popup's short version, and a credibility asset for reviewers
+  evaluating the project.
+- Both surfaces follow the existing design system (clinical-blue accent,
+  Inter/JetBrains Mono type, 150-200ms reduced-motion-safe transitions),
+  with an intentional bit of visual polish: a frosted-glass dialog
+  overlay, an elevated 12px-radius surface with a heavier shadow than the
+  flat cards behind it, and a mono-font "formula chip" that echoes the
+  app's existing data-stat styling.
+- Confirmed with the developer that widget choice (pills vs. a native
+  `<select>`) doesn't materially affect Semantic Scholar rate-limit
+  exposure — request volume is driven by how often a (specialty,
+  window_days) combination is actually queried, not by which control
+  triggers it — so the existing pill-based selectors were kept as-is.
+
+## Follow-up: Velocity Smoothing Constant Tuned to +21 Days (post-ship)
+
+An external critique raised two points worth stress-testing: (1) citation
+lag — academic citations take months to materialize, so a brand-new
+article's early citations are more likely a fluke (self-citation,
+preprint artifact) than genuine impact, and (2) PubMed indexing lag —
+nominal publication dates can lag real database visibility by several
+days. Both are real bibliometric phenomena, but the critique's proposed
+fix (switch units to months, denominator `months_since_publication + 2`)
+was rejected after checking the math: converted to day-equivalent terms
+that's a `+60` day constant, a 4x jump that would have flattened
+differentiation almost entirely within the app's own 60-day time-range
+option (denominator range 60→120, a 2x spread, vs. today's 14→74, a 5.3x
+spread) — undermining the one window built specifically for "what's
+trending right now." The "reduces noise from daily scraping" justification
+also didn't apply to this codebase, which recomputes from 8h-TTL cached
+snapshots, not continuous scraping. Indexing lag was left as-is — it's a
+roughly uniform bias across every article in a given specialty/window (all
+indexed through the same PubMed pipeline), so it mostly washes out in
+*relative* ranking, and fixing it properly would require plumbing PubMed's
+actual indexing-date field through the pipeline for uncertain benefit.
+
+What did change: `VELOCITY_AGE_SMOOTHING_DAYS` moved from `14` to `21` — a
+modest, still-days-based bump that more decisively discounts an
+ultra-fresh single citation against an established article's citation
+count (e.g. a 2-day-old article with 1 citation now scores `1÷23≈0.04`
+against a 60-day-old article with 5 citations at `5÷81≈0.06` — a clearer
+gap than the old `14`/`74` pairing gave), without touching the 60-day
+window's differentiation range. Updated in `backend/app/services/trending.py`,
+its tests, and the velocity-explainer popup / How It Works page copy.

@@ -29,7 +29,7 @@ DEFAULT_WINDOW_DAYS = 365
 SLICE_LENGTH_DAYS = 90
 # Velocity smoothing constant — keeps very-new articles from dividing by a
 # near-zero age and dominating the ranking on a single early citation.
-VELOCITY_AGE_SMOOTHING_DAYS = 14
+VELOCITY_AGE_SMOOTHING_DAYS = 21
 
 
 class UnknownSpecialtyError(ValueError):
