@@ -4,7 +4,7 @@ import { axe } from 'jest-axe'
 import HowItWorksPage from './how-it-works-page'
 
 describe('HowItWorksPage', () => {
-  it('renders the page heading and all four section headings', () => {
+  it('renders the page heading and all five section headings', () => {
     // Arrange & Act
     render(<HowItWorksPage />)
 
@@ -15,6 +15,7 @@ describe('HowItWorksPage', () => {
       screen.getByRole('heading', { name: /specialties & time range/i, level: 2 })
     ).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: /citation velocity/i, level: 2 })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /^notability$/i, level: 2 })).toBeInTheDocument()
     expect(
       screen.getByRole('heading', { name: /freshness & caching/i, level: 2 })
     ).toBeInTheDocument()
@@ -26,8 +27,17 @@ describe('HowItWorksPage', () => {
 
     // Assert
     expect(screen.getByText(/citations ÷ \(days since publication \+ 21\)/i)).toBeInTheDocument()
-    expect(screen.getByText(/pubmed/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/pubmed/i).length).toBeGreaterThan(0)
     expect(screen.getByText(/semantic scholar/i)).toBeInTheDocument()
+  })
+
+  it('explains the evidence-tier notability signal', () => {
+    // Arrange & Act
+    render(<HowItWorksPage />)
+
+    // Assert
+    expect(screen.getAllByText(/randomized controlled trial/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/meta-analysis|systematic review/i).length).toBeGreaterThan(0)
   })
 
   it('has no automatically detectable accessibility violations', async () => {

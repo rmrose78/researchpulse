@@ -23,17 +23,19 @@ function makeArticle(overrides: Partial<ArticleSearchResult> = {}): ArticleSearc
     journal: 'Journal of Cardiology',
     pub_date: '2026-01-15',
     doi: null,
+    publication_types: [],
     ...overrides,
   }
 }
 
 async function renderList(
   articles: ArticleSearchResult[],
-  citationStats?: Record<string, CitationStat>
+  citationStats?: Record<string, CitationStat>,
+  notableTypes?: Record<string, string>
 ) {
   const utils = render(
     <ReadingListProvider>
-      <ArticleList articles={articles} citationStats={citationStats} />
+      <ArticleList articles={articles} citationStats={citationStats} notableTypes={notableTypes} />
     </ReadingListProvider>
   )
   // Flush the provider's initial getSavedArticles() fetch so its resolution
@@ -81,6 +83,18 @@ describe('ArticleList', () => {
 
     // Assert
     expect(screen.getByText('14 citations · velocity 0.80')).toBeInTheDocument()
+  })
+
+  it('passes the matching notableType through to each card by pmid', async () => {
+    // Arrange
+    const articles = [makeArticle({ pmid: '1' }), makeArticle({ pmid: '2' })]
+    const notableTypes = { '1': 'Randomized Controlled Trial' }
+
+    // Act
+    await renderList(articles, undefined, notableTypes)
+
+    // Assert
+    expect(screen.getByText('Randomized Controlled Trial')).toBeInTheDocument()
   })
 
   it('has no automatically detectable accessibility violations', async () => {

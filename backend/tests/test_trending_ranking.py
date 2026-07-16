@@ -1,7 +1,7 @@
 from datetime import date
 from app.schemas.pubmed import ArticleSearchResult
 from app.services.specialties import SPECIALTY_KEYWORDS, SPECIALTY_QUERIES
-from app.services.trending import _build_query, age_days, compute_velocity, rank_articles
+from app.services.trending import _build_query, _notability, age_days, compute_velocity, rank_articles
 
 
 def test_age_days_computes_days_since_publication():
@@ -58,10 +58,13 @@ def test_compute_velocity_not_raw_citations_over_age():
     assert smoothed == 10 / 21
 
 
-def _article(pmid: str, pub_date: str | None) -> ArticleSearchResult:
+def _article(
+    pmid: str, pub_date: str | None, publication_types: list[str] | None = None
+) -> ArticleSearchResult:
     return ArticleSearchResult(
         pmid=pmid, title=f"Article {pmid}", abstract=None, authors=[],
         journal=None, pub_date=pub_date, doi=None,
+        publication_types=publication_types or [],
     )
 
 
@@ -184,6 +187,127 @@ def test_rank_articles_new_notable_sorts_by_recency_not_citation_count():
 
     # Assert — newest publication first, regardless of citation count
     assert [a.pmid for a in ranked] == ["newer", "older"]
+
+
+def test_notability_returns_none_when_no_publication_types_match():
+    # Arrange & Act
+    result = _notability(["Journal Article", "Case Reports"])
+
+    # Assert
+    assert result is None
+
+
+def test_notability_returns_best_tier_match_across_multiple_types():
+    # Arrange & Act — Multicenter Study (tier 3) and RCT (tier 2) both present
+    result = _notability(["Multicenter Study", "Randomized Controlled Trial"])
+
+    # Assert — best (lowest-number) tier wins, not first-in-list
+    assert result == (2, "Randomized Controlled Trial")
+
+
+def test_notability_ranks_meta_analysis_above_rct():
+    # Arrange & Act
+    result = _notability(["Randomized Controlled Trial", "Meta-Analysis"])
+
+    # Assert
+    assert result == (1, "Meta-Analysis")
+
+
+def test_rank_articles_new_notable_sets_notable_type_on_tiered_article():
+    # Arrange
+    articles = [_article("rct", "2024/Jun", publication_types=["Randomized Controlled Trial"])]
+    citation_counts = {"rct": 0}
+    today = date(2024, 7, 1)
+
+    # Act
+    ranked = rank_articles(articles, citation_counts, today, mode="new_notable")
+
+    # Assert
+    assert ranked[0].notable_type == "Randomized Controlled Trial"
+
+
+def test_rank_articles_new_notable_leaves_notable_type_none_for_untiered_article():
+    # Arrange
+    articles = [_article("plain", "2024/Jun", publication_types=["Journal Article"])]
+    citation_counts = {"plain": 0}
+    today = date(2024, 7, 1)
+
+    # Act
+    ranked = rank_articles(articles, citation_counts, today, mode="new_notable")
+
+    # Assert
+    assert ranked[0].notable_type is None
+
+
+def test_rank_articles_new_notable_sorts_tiered_article_above_newer_untiered_one():
+    # Arrange — "plain" is newer, but "rct" has an evidence tier
+    articles = [
+        _article("plain", "2024/Jun"),
+        _article("rct", "2024/Jan", publication_types=["Randomized Controlled Trial"]),
+    ]
+    citation_counts = {"plain": 0, "rct": 0}
+    today = date(2024, 7, 1)
+
+    # Act
+    ranked = rank_articles(articles, citation_counts, today, mode="new_notable")
+
+    # Assert — tier beats recency
+    assert [a.pmid for a in ranked] == ["rct", "plain"]
+
+
+def test_rank_articles_new_notable_sorts_meta_analysis_above_rct_regardless_of_date():
+    # Arrange — "rct" is newer than "meta"
+    articles = [
+        _article("rct", "2024/Jun", publication_types=["Randomized Controlled Trial"]),
+        _article("meta", "2024/Jan", publication_types=["Meta-Analysis"]),
+    ]
+    citation_counts = {"rct": 0, "meta": 0}
+    today = date(2024, 7, 1)
+
+    # Act
+    ranked = rank_articles(articles, citation_counts, today, mode="new_notable")
+
+    # Assert — better tier wins even though it's the older article
+    assert [a.pmid for a in ranked] == ["meta", "rct"]
+
+
+def test_rank_articles_new_notable_recency_breaks_ties_among_untiered_articles():
+    # Arrange — neither article has a qualifying publication type
+    articles = [_article("older", "2024/Jan"), _article("newer", "2024/Jun")]
+    citation_counts = {"older": 0, "newer": 0}
+    today = date(2024, 7, 1)
+
+    # Act
+    ranked = rank_articles(articles, citation_counts, today, mode="new_notable")
+
+    # Assert — falls back to today's pure-recency order, no regression
+    assert [a.pmid for a in ranked] == ["newer", "older"]
+
+
+def test_rank_articles_trending_mode_notable_type_always_none():
+    # Arrange — even a tiered article gets no notable_type outside new_notable
+    articles = [_article("1", "2024/Jan", publication_types=["Meta-Analysis"])]
+    citation_counts = {"1": 5}
+    today = date(2024, 7, 1)
+
+    # Act
+    ranked = rank_articles(articles, citation_counts, today, mode="trending")
+
+    # Assert
+    assert ranked[0].notable_type is None
+
+
+def test_rank_articles_most_cited_mode_notable_type_always_none():
+    # Arrange
+    articles = [_article("1", "2024/Jan", publication_types=["Meta-Analysis"])]
+    citation_counts = {"1": 5}
+    today = date(2024, 7, 1)
+
+    # Act
+    ranked = rank_articles(articles, citation_counts, today, mode="most_cited")
+
+    # Assert
+    assert ranked[0].notable_type is None
 
 
 def test_build_query_returns_mesh_only_for_trending_mode():

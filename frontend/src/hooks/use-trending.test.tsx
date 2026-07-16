@@ -26,8 +26,10 @@ function makeArticle(overrides: Partial<TrendingArticle> = {}): TrendingArticle 
     journal: 'Journal of Cardiology',
     pub_date: '2026-01-01',
     doi: null,
+    publication_types: [],
     citation_count: 12,
     velocity: 0.6,
+    notable_type: null,
     ...overrides,
   }
 }

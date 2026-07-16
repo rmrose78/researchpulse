@@ -6,6 +6,7 @@ import EmptyState from '@/components/sections/empty-state/empty-state'
 import ErrorState from '@/components/sections/error-state/error-state'
 import TrendingFilters from '@/components/sections/trending-filters/trending-filters'
 import VelocityExplainer from '@/components/sections/velocity-explainer/velocity-explainer'
+import NotabilityExplainer from '@/components/sections/notability-explainer/notability-explainer'
 import { useTrending } from '@/hooks/use-trending'
 import { formatRelativeTime } from '@/utils/format'
 import type { CitationStat } from '@/types'
@@ -43,6 +44,15 @@ export default function TrendingPage() {
     return map
   }, [trendingArticles, mode])
 
+  const notableTypes = useMemo(() => {
+    const map: Record<string, string> = {}
+    if (mode !== 'new_notable') return map
+    for (const article of trendingArticles) {
+      if (article.notable_type) map[article.pmid] = article.notable_type
+    }
+    return map
+  }, [trendingArticles, mode])
+
   return (
     <Hero>
       <section className={styles.trendingLayout} aria-label="Trending">
@@ -62,6 +72,7 @@ export default function TrendingPage() {
                 Updated {formatRelativeTime(computedAt)} · via Semantic Scholar
               </p>
               {mode === 'trending' && <VelocityExplainer />}
+              {mode === 'new_notable' && <NotabilityExplainer />}
             </div>
           )}
           <div aria-live="polite" className={styles.trendingResults}>
@@ -70,7 +81,11 @@ export default function TrendingPage() {
               <EmptyState message="No trending articles found for this specialty at this time range — try a wider range." />
             )}
             {trendingStatus === 'success' && trendingArticles.length > 0 && (
-              <ArticleList articles={trendingArticles} citationStats={citationStats} />
+              <ArticleList
+                articles={trendingArticles}
+                citationStats={citationStats}
+                notableTypes={notableTypes}
+              />
             )}
             {trendingStatus === 'error' && <ErrorState onRetry={retryTrending} />}
           </div>

@@ -95,8 +95,10 @@ describe('TrendingPage', () => {
             journal: null,
             pub_date: '2025/Jan',
             doi: null,
+            publication_types: [],
             citation_count: 14,
             velocity: 0.8,
+            notable_type: null,
           },
         ],
       })
@@ -214,8 +216,10 @@ describe('TrendingPage', () => {
       journal: null,
       pub_date: '2025/Jan',
       doi: null,
+      publication_types: [],
       citation_count: 50,
       velocity: 0.1,
+      notable_type: null,
     }
     mockedGetTrending.mockResolvedValue(makeTrendingResponse({ results: [article] }))
     await renderPage()
@@ -243,8 +247,10 @@ describe('TrendingPage', () => {
       journal: null,
       pub_date: '2026/Jul',
       doi: null,
+      publication_types: [],
       citation_count: 0,
       velocity: 0,
+      notable_type: null,
     }
     const alreadyCited = {
       pmid: '222',
@@ -254,8 +260,10 @@ describe('TrendingPage', () => {
       journal: null,
       pub_date: '2026/Jun',
       doi: null,
+      publication_types: [],
       citation_count: 3,
       velocity: 0.1,
+      notable_type: null,
     }
     mockedGetTrending.mockResolvedValue(
       makeTrendingResponse({ mode: 'new_notable', results: [brandNew, alreadyCited] })
@@ -270,6 +278,88 @@ describe('TrendingPage', () => {
     // Assert
     expect(screen.queryByText(/0 citations/i)).not.toBeInTheDocument()
     expect(screen.getByText('3 citations')).toBeInTheDocument()
+  })
+
+  it('shows a "how is this calculated" trigger for notability in New & Notable mode', async () => {
+    // Arrange
+    mockedGetTrending.mockResolvedValue(makeTrendingResponse({ mode: 'new_notable' }))
+    await renderPage()
+    await screen.findByText(/updated .* · via semantic scholar/i)
+
+    // Act
+    await userEvent.click(screen.getByRole('radio', { name: /new & notable/i }))
+
+    // Assert
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /how is this calculated/i })).toBeInTheDocument()
+    )
+  })
+
+  it('shows an evidence-tier badge for a tiered article in New & Notable mode, but not for others', async () => {
+    // Arrange
+    const rct = {
+      pmid: '111',
+      title: 'A randomized trial',
+      abstract: null,
+      authors: [],
+      journal: null,
+      pub_date: '2026/Jul',
+      doi: null,
+      publication_types: ['Randomized Controlled Trial'],
+      citation_count: 0,
+      velocity: 0,
+      notable_type: 'Randomized Controlled Trial',
+    }
+    const plain = {
+      pmid: '222',
+      title: 'A plain new article',
+      abstract: null,
+      authors: [],
+      journal: null,
+      pub_date: '2026/Jun',
+      doi: null,
+      publication_types: [],
+      citation_count: 0,
+      velocity: 0,
+      notable_type: null,
+    }
+    mockedGetTrending.mockResolvedValue(
+      makeTrendingResponse({ mode: 'new_notable', results: [rct, plain] })
+    )
+    await renderPage()
+    await screen.findByRole('heading', { name: /a randomized trial/i })
+
+    // Act
+    await userEvent.click(screen.getByRole('radio', { name: /new & notable/i }))
+    await screen.findByRole('heading', { name: /a randomized trial/i })
+
+    // Assert
+    expect(screen.getByText('Randomized Controlled Trial')).toBeInTheDocument()
+  })
+
+  it('shows no evidence-tier badge for a tiered article outside New & Notable mode', async () => {
+    // Arrange
+    const rct = {
+      pmid: '111',
+      title: 'A randomized trial',
+      abstract: null,
+      authors: [],
+      journal: null,
+      pub_date: '2026/Jul',
+      doi: null,
+      publication_types: ['Randomized Controlled Trial'],
+      citation_count: 5,
+      velocity: 0.2,
+      notable_type: null,
+    }
+    mockedGetTrending.mockResolvedValue(makeTrendingResponse({ results: [rct] }))
+
+    // Act
+    await renderPage()
+    await screen.findByRole('heading', { name: /a randomized trial/i })
+
+    // Assert
+    expect(screen.queryByText('Randomized Controlled Trial')).not.toBeInTheDocument()
   })
 
   it('disables a specialty pill already known to have no results at the current range', async () => {

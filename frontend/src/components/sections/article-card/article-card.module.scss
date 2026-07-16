@@ -31,11 +31,31 @@
   gap: 0.75rem;
 }
 
+.titleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
 .title {
   font-family: $font-heading;
   font-weight: 600;
   font-size: 1.1rem;
   color: $navy-text;
+}
+
+.notableBadge {
+  align-self: flex-start;
+  font-family: $font-mono;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: $clinical-blue;
+  background: rgba(41, 115, 193, 0.08);
+  border-radius: 6px;
+  padding: 0.15rem 0.5rem;
 }
 
 .saveToggle {

@@ -6,9 +6,10 @@ import styles from './article-list.module.scss'
 interface ArticleListProps {
   articles: ArticleSearchResult[]
   citationStats?: Record<string, CitationStat>
+  notableTypes?: Record<string, string>
 }
 
-export default function ArticleList({ articles, citationStats }: ArticleListProps) {
+export default function ArticleList({ articles, citationStats, notableTypes }: ArticleListProps) {
   const { isSaved, toggleSave } = useReadingList()
 
   return (
@@ -20,6 +21,7 @@ export default function ArticleList({ articles, citationStats }: ArticleListProp
             isSaved={isSaved(article.pmid)}
             onSaveToggle={toggleSave}
             citationStat={citationStats?.[article.pmid]}
+            notableType={notableTypes?.[article.pmid]}
           />
         </li>
       ))}

@@ -6,6 +6,7 @@ export interface ArticleSearchResult {
   journal: string | null
   pub_date: string | null
   doi: string | null
+  publication_types: string[]
 }
 
 export interface SearchResponse {
@@ -39,6 +40,7 @@ export interface CitationStat {
 export interface TrendingArticle extends ArticleSearchResult {
   citation_count: number
   velocity: number
+  notable_type: string | null
 }
 
 export interface TrendingResponse {

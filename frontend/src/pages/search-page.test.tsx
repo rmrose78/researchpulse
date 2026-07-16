@@ -36,6 +36,7 @@ function makeArticle(overrides: Partial<ArticleSearchResult> = {}): ArticleSearc
     journal: 'Journal of Cardiology',
     pub_date: '2026-01-01',
     doi: null,
+    publication_types: [],
     ...overrides,
   }
 }

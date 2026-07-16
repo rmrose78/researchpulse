@@ -31,6 +31,24 @@ SLICE_LENGTH_DAYS = 90
 # Velocity smoothing constant — keeps very-new articles from dividing by a
 # near-zero age and dominating the ranking on a single early citation.
 VELOCITY_AGE_SMOOTHING_DAYS = 21
+# Evidence-based-medicine hierarchy — the real "notability" signal for New &
+# Notable, sourced straight from PubMed's own PublicationType metadata rather
+# than invented. Lower number = higher evidence tier. Anything not listed
+# here (plain "Journal Article", Case Reports, Letters, etc.) is untiered:
+# no badge, and it sorts after every tiered article.
+NOTABILITY_TIERS: dict[str, int] = {
+    "Meta-Analysis": 1,
+    "Systematic Review": 1,
+    "Randomized Controlled Trial": 2,
+    "Clinical Trial": 3,
+    "Clinical Trial, Phase I": 3,
+    "Clinical Trial, Phase II": 3,
+    "Clinical Trial, Phase III": 3,
+    "Clinical Trial, Phase IV": 3,
+    "Multicenter Study": 3,
+    "Comparative Study": 3,
+}
+UNTIERED_NOTABILITY = 99
 
 
 class UnknownSpecialtyError(ValueError):
@@ -83,6 +101,13 @@ def compute_velocity(citation_count: int, age_in_days: int) -> float:
     return citation_count / (age_in_days + VELOCITY_AGE_SMOOTHING_DAYS)
 
 
+def _notability(publication_types: list[str]) -> tuple[int, str] | None:
+    matches = [(NOTABILITY_TIERS[pt], pt) for pt in publication_types if pt in NOTABILITY_TIERS]
+    if not matches:
+        return None
+    return min(matches, key=lambda match: match[0])
+
+
 def _build_query(specialty: str, mode: str) -> str:
     mesh_query = SPECIALTY_QUERIES[specialty]
     if mode != "new_notable":
@@ -109,17 +134,27 @@ def rank_articles(
         days = age_days(article.pub_date, today)
         if days is None:
             continue
+        notable_type = None
+        if mode == "new_notable":
+            notability = _notability(article.publication_types)
+            if notability is not None:
+                notable_type = notability[1]
         ranked.append(
             TrendingArticle(
                 **article.model_dump(),
                 citation_count=count,
                 velocity=compute_velocity(count, days),
+                notable_type=notable_type,
             )
         )
     if mode == "most_cited":
         ranked.sort(key=lambda a: a.citation_count, reverse=True)
     elif mode == "new_notable":
-        ranked.sort(key=lambda a: age_days(a.pub_date, today) or 0)
+        def _new_notable_sort_key(a: TrendingArticle) -> tuple[int, int]:
+            notability = _notability(a.publication_types)
+            tier = notability[0] if notability else UNTIERED_NOTABILITY
+            return (tier, age_days(a.pub_date, today) or 0)
+        ranked.sort(key=_new_notable_sort_key)
     else:
         ranked.sort(key=lambda a: a.velocity, reverse=True)
     return ranked

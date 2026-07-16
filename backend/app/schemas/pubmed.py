@@ -9,6 +9,7 @@ class ArticleSearchResult(BaseModel):
     journal: Optional[str] = None
     pub_date: Optional[str] = None
     doi: Optional[str] = None
+    publication_types: list[str] = []
 
 class ArticleDetail(ArticleSearchResult):
     mesh_terms: list[str] = []
