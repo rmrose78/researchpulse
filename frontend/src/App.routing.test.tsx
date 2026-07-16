@@ -2,13 +2,15 @@ import { describe, it, expect, jest, beforeEach } from '@jest/globals'
 import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App'
-import { getSavedArticles, searchArticles } from '@/utils/api'
+import { getSavedArticles, getTrending, getTrendingAvailability, searchArticles } from '@/utils/api'
 
 jest.mock('@/utils/api', () => ({
   searchArticles: jest.fn(),
   getSavedArticles: jest.fn(),
   saveArticle: jest.fn(),
   removeSavedArticle: jest.fn(),
+  getTrending: jest.fn(),
+  getTrendingAvailability: jest.fn(),
 }))
 
 function navigateTo(path: string) {
@@ -27,18 +29,38 @@ beforeEach(() => {
   jest.mocked(searchArticles).mockReset()
   jest.mocked(getSavedArticles).mockReset()
   jest.mocked(getSavedArticles).mockResolvedValue([])
+  jest.mocked(getTrending).mockReset()
+  jest.mocked(getTrending).mockResolvedValue({
+    specialty: 'cardiology',
+    window_days: 365,
+    computed_at: '2026-01-01T00:00:00Z',
+    results: [],
+  })
+  jest.mocked(getTrendingAvailability).mockReset()
+  jest.mocked(getTrendingAvailability).mockResolvedValue({ window_days: 365, available: {} })
   sessionStorage.clear()
   navigateTo('/')
 })
 
 describe('App routing', () => {
-  it('renders the merged trending/search landing page at /', async () => {
+  it('renders the Trending landing page at /', async () => {
     // Arrange & Act
     await renderApp()
 
     // Assert
-    expect(screen.getByRole('heading', { name: /^trending$/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /^search pubmed$/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /trending biomedical research/i })).toBeInTheDocument()
+    expect(screen.getByRole('radiogroup', { name: /specialty/i })).toBeInTheDocument()
+  })
+
+  it('renders the Search page at /search', async () => {
+    // Arrange
+    navigateTo('/search')
+
+    // Act
+    await renderApp()
+
+    // Assert
+    expect(screen.getByRole('heading', { name: /^search pubmed$/i })).toBeInTheDocument()
   })
 
   it('renders the reading list placeholder at /reading-list', async () => {
@@ -52,7 +74,18 @@ describe('App routing', () => {
     expect(screen.getByRole('heading', { name: /^reading list$/i })).toBeInTheDocument()
   })
 
-  it('redirects an unknown route back to / (the merged landing page)', async () => {
+  it('renders the How It Works page at /how-it-works', async () => {
+    // Arrange
+    navigateTo('/how-it-works')
+
+    // Act
+    await renderApp()
+
+    // Assert
+    expect(screen.getByRole('heading', { name: /^how it works$/i })).toBeInTheDocument()
+  })
+
+  it('redirects an unknown route back to / (the Trending landing page)', async () => {
     // Arrange
     navigateTo('/this-route-does-not-exist')
 
@@ -60,16 +93,16 @@ describe('App routing', () => {
     await renderApp()
 
     // Assert
-    expect(screen.getByRole('heading', { name: /^trending$/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /trending biomedical research/i })).toBeInTheDocument()
   })
 
-  it('has working nav links to trending and reading list, and a home link to the landing page', async () => {
+  it('has working nav links to trending, search, and reading list, and a home link to the landing page', async () => {
     // Arrange
     await renderApp()
 
     // Act & Assert
-    expect(screen.queryByRole('link', { name: /^search$/i })).not.toBeInTheDocument()
     expect(screen.getByRole('link', { name: /^trending$/i })).toHaveAttribute('href', '/')
+    expect(screen.getByRole('link', { name: /^search pubmed$/i })).toHaveAttribute('href', '/search')
     expect(screen.getByRole('link', { name: /^reading list$/i })).toHaveAttribute(
       'href',
       '/reading-list'
@@ -88,20 +121,15 @@ describe('App routing', () => {
     expect(screen.getByRole('link', { name: /^trending$/i })).toHaveAttribute('href', '/')
   })
 
-  it('clicking Trending in the nav resets an expanded search form back to the trending default', async () => {
-    // Arrange — React Router doesn't remount the page for a same-route
-    // click, so without an explicit reset the expanded search form would
-    // stick around even after clicking Trending.
+  it('clicking Search PubMed in the nav navigates from Trending to the Search page', async () => {
+    // Arrange
     await renderApp()
-    await userEvent.click(screen.getByRole('button', { name: /^search pubmed$/i }))
-    expect(screen.getByRole('textbox', { name: /search pubmed/i })).toBeInTheDocument()
 
     // Act
-    await userEvent.click(screen.getByRole('link', { name: /^trending$/i }))
+    await userEvent.click(screen.getByRole('link', { name: /^search pubmed$/i }))
 
     // Assert
-    expect(screen.getByRole('heading', { name: /^trending$/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /^search pubmed$/i })).toBeInTheDocument()
-    expect(screen.queryByRole('textbox', { name: /search pubmed/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /^search pubmed$/i })).toBeInTheDocument()
+    expect(screen.getByRole('textbox', { name: /search pubmed/i })).toBeInTheDocument()
   })
 })

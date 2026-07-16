@@ -43,7 +43,7 @@ export default function SearchResults({
     <section className={styles.section} aria-labelledby="results-heading">
       <div className={styles.header}>
         <button type="button" className={styles.backButton} onClick={onBack}>
-          ← Back to Trending
+          ← New Search
         </button>
         <h2 id="results-heading" ref={headingRef} tabIndex={-1} className={styles.heading}>
           Results for '{query}'

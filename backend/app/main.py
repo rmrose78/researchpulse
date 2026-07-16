@@ -1,13 +1,28 @@
+from contextlib import asynccontextmanager
+import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import search, reading_list
+from app.routers import search, reading_list, trending
 from app.database import engine, Base
 import app.models.reading_list
+import app.models.trending
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Trending's Semantic Scholar batch client (and, where opted in, PubMedService
+    # calls) reuse this one connection-pooled client instead of opening a fresh
+    # httpx.AsyncClient per request.
+    async with httpx.AsyncClient() as client:
+        app.state.http_client = client
+        yield
+
 
 app = FastAPI(
     title="ResearchPulse API",
     description="Biomedical research discovery platform",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -23,7 +38,8 @@ Base.metadata.create_all(bind=engine)
 
 app.include_router(search.router)
 app.include_router(reading_list.router)
+app.include_router(trending.router)
 
-@app.get("/health") 
+@app.get("/health")
 async def health_check():
     return {"status": "ok", "service": "ResearchPulse API"}

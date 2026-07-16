@@ -30,3 +30,25 @@ export interface SavedArticle {
   doi: string | null
   saved_at: string
 }
+
+export interface CitationStat {
+  count: number
+  velocity: number
+}
+
+export interface TrendingArticle extends ArticleSearchResult {
+  citation_count: number
+  velocity: number
+}
+
+export interface TrendingResponse {
+  specialty: string
+  window_days: number
+  computed_at: string
+  results: TrendingArticle[]
+}
+
+export interface TrendingAvailabilityResponse {
+  window_days: number
+  available: Record<string, boolean>
+}

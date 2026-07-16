@@ -101,7 +101,7 @@ describe('SearchResults', () => {
     })
 
     // Act
-    await userEvent.click(screen.getByRole('button', { name: /back to trending/i }))
+    await userEvent.click(screen.getByRole('button', { name: /new search/i }))
 
     // Assert
     expect(onBack).toHaveBeenCalledTimes(1)

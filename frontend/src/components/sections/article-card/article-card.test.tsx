@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { axe } from 'jest-axe'
 import ArticleCard from './article-card'
-import type { ArticleSearchResult } from '@/types'
+import type { ArticleSearchResult, CitationStat } from '@/types'
 
 beforeAll(() => {
   Object.defineProperty(window, 'matchMedia', {
@@ -30,9 +30,18 @@ function makeArticle(overrides: Partial<ArticleSearchResult> = {}): ArticleSearc
   }
 }
 
-function renderCard(overrides: Partial<ArticleSearchResult> = {}, isSaved = false) {
+function renderCard(
+  overrides: Partial<ArticleSearchResult> = {},
+  isSaved = false,
+  citationStat?: CitationStat
+) {
   return render(
-    <ArticleCard article={makeArticle(overrides)} isSaved={isSaved} onSaveToggle={jest.fn()} />
+    <ArticleCard
+      article={makeArticle(overrides)}
+      isSaved={isSaved}
+      onSaveToggle={jest.fn()}
+      citationStat={citationStat}
+    />
   )
 }
 
@@ -187,6 +196,30 @@ describe('ArticleCard', () => {
 
     // Assert
     expect(onSaveToggle).toHaveBeenCalledWith(article)
+  })
+
+  it('renders no citation stat line when citationStat is not provided', () => {
+    // Arrange & Act
+    renderCard()
+
+    // Assert
+    expect(screen.queryByText(/citation/i)).not.toBeInTheDocument()
+  })
+
+  it('renders the citation count and velocity when citationStat is provided', () => {
+    // Arrange & Act
+    renderCard({}, false, { count: 14, velocity: 0.8 })
+
+    // Assert
+    expect(screen.getByText('14 citations · velocity 0.80')).toBeInTheDocument()
+  })
+
+  it('uses singular "citation" for a count of exactly one', () => {
+    // Arrange & Act
+    renderCard({}, false, { count: 1, velocity: 0.1 })
+
+    // Assert
+    expect(screen.getByText(/^1 citation ·/)).toBeInTheDocument()
   })
 
   it('has no automatically detectable accessibility violations when collapsed', async () => {

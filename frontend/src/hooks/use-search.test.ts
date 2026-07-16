@@ -1,6 +1,6 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals'
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { useSearch, SEARCH_STORAGE_KEY, RESET_TO_TRENDING_EVENT } from './use-search'
+import { useSearch, SEARCH_STORAGE_KEY } from './use-search'
 import { searchArticles } from '@/utils/api'
 import type { ArticleSearchResult, SearchFilters, SearchResponse } from '@/types'
 
@@ -41,44 +41,14 @@ beforeEach(() => {
 })
 
 describe('useSearch', () => {
-  it('starts idle on the trending screen', () => {
+  it('starts idle on the form view', () => {
     // Arrange & Act
     const { result } = renderHook(() => useSearch())
 
     // Assert
-    expect(result.current.view).toBe('trending')
+    expect(result.current.view).toBe('form')
     expect(result.current.status).toBe('idle')
     expect(result.current.results).toEqual([])
-  })
-
-  it('expandSearch moves from the trending view to the search view', () => {
-    // Arrange
-    const { result } = renderHook(() => useSearch())
-
-    // Act
-    act(() => {
-      result.current.expandSearch()
-    })
-
-    // Assert
-    expect(result.current.view).toBe('search')
-  })
-
-  it('resets to the trending view when the reset event fires, even mid-search or on results', () => {
-    // Arrange
-    const { result } = renderHook(() => useSearch())
-    act(() => {
-      result.current.expandSearch()
-    })
-    expect(result.current.view).toBe('search')
-
-    // Act
-    act(() => {
-      window.dispatchEvent(new Event(RESET_TO_TRENDING_EVENT))
-    })
-
-    // Assert
-    expect(result.current.view).toBe('trending')
   })
 
   it('goes to loading then success on a search with results', async () => {
@@ -139,7 +109,7 @@ describe('useSearch', () => {
     act(() => {
       result.current.goBack()
     })
-    expect(result.current.view).toBe('trending')
+    expect(result.current.view).toBe('form')
 
     // Act
     act(() => {
@@ -190,7 +160,7 @@ describe('useSearch', () => {
     })
 
     // Assert
-    expect(result.current.view).toBe('trending')
+    expect(result.current.view).toBe('form')
     expect(result.current.status).toBe('success')
     expect(result.current.results).toHaveLength(1)
     expect(result.current.searchedQuery).toBe('cardiac')
@@ -374,39 +344,12 @@ describe('useSearch', () => {
     expect(result.current.view).toBe('results')
   })
 
-  it('restores the search (input) view on mount even with a successful result set cached', () => {
-    // Arrange — simulates a user who expanded the search dropdown (without
-    // submitting a new query), then refreshed or navigated away and back
-    sessionStorage.setItem(
-      SEARCH_STORAGE_KEY,
-      JSON.stringify({
-        query: 'cardiac',
-        filters: makeFilters(),
-        view: 'search',
-        searchedQuery: 'cardiac',
-        searchedFilters: makeFilters(),
-        results: [makeArticle()],
-        status: 'success',
-      })
-    )
-
-    // Act
-    const { result } = renderHook(() => useSearch())
-
-    // Assert — the persisted view must win, not an assumption derived from
-    // status; a cached result set existing doesn't mean the user was
-    // looking at it
-    expect(result.current.view).toBe('search')
-    expect(result.current.status).toBe('success')
-    expect(result.current.results).toHaveLength(1)
-  })
-
-  it('starts on the trending view when no previous session is restored', () => {
+  it('starts on the form view when no previous session is restored', () => {
     // Arrange & Act
     const { result } = renderHook(() => useSearch())
 
     // Assert
-    expect(result.current.view).toBe('trending')
+    expect(result.current.view).toBe('form')
   })
 
   it('does not call the API when resubmitting a query restored from a previous session', () => {

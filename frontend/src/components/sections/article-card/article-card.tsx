@@ -1,7 +1,7 @@
 import { useId, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { Bookmark, BookmarkCheck, ChevronDown } from 'lucide-react'
-import type { ArticleSearchResult } from '@/types'
+import type { ArticleSearchResult, CitationStat } from '@/types'
 import { formatAuthors } from '@/utils/format'
 import styles from './article-card.module.scss'
 
@@ -9,6 +9,7 @@ interface ArticleCardProps {
   article: ArticleSearchResult
   isSaved: boolean
   onSaveToggle: (article: ArticleSearchResult) => void
+  citationStat?: CitationStat
 }
 
 const ANIMATION_TRANSITION = { type: 'tween', duration: 0.2, ease: 'easeInOut' } as const
@@ -18,7 +19,12 @@ const chevronRotate = {
   expanded: { rotate: 180 },
 } as const
 
-export default function ArticleCard({ article, isSaved, onSaveToggle }: ArticleCardProps) {
+export default function ArticleCard({
+  article,
+  isSaved,
+  onSaveToggle,
+  citationStat,
+}: ArticleCardProps) {
   const [expanded, setExpanded] = useState(false)
   const abstractId = useId()
   const reducedMotion = useReducedMotion()
@@ -70,6 +76,12 @@ export default function ArticleCard({ article, isSaved, onSaveToggle }: ArticleC
         </>
       )}
       <p className={styles.metadata}>{metadata}</p>
+      {citationStat && (
+        <p className={styles.citationStat}>
+          {citationStat.count} {citationStat.count === 1 ? 'citation' : 'citations'} · velocity{' '}
+          {citationStat.velocity.toFixed(2)}
+        </p>
+      )}
     </article>
   )
 }
