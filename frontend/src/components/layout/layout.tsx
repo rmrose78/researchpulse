@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
 import { NavLink } from 'react-router-dom'
+import MobileNav from './mobile-nav/mobile-nav'
+import { NAV_ITEMS } from './nav-items'
 import styles from './layout.module.scss'
 
 interface LayoutProps {
@@ -22,27 +24,15 @@ export default function Layout({ children }: LayoutProps) {
             ResearchPulse
           </NavLink>
           <ul className={styles.navLinks}>
-            <li>
-              <NavLink to="/" end className={navLinkClassName}>
-                Trending
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/search" className={navLinkClassName}>
-                Search PubMed
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/reading-list" className={navLinkClassName}>
-                Reading List
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/how-it-works" className={navLinkClassName}>
-                How It Works
-              </NavLink>
-            </li>
+            {NAV_ITEMS.map((item) => (
+              <li key={item.to}>
+                <NavLink to={item.to} end={item.end} className={navLinkClassName}>
+                  {item.label}
+                </NavLink>
+              </li>
+            ))}
           </ul>
+          <MobileNav />
         </nav>
       </header>
       <main id="main-content" className={styles.main}>

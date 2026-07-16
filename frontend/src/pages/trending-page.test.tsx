@@ -233,6 +233,45 @@ describe('TrendingPage', () => {
     expect(screen.queryByText(/velocity/i)).not.toBeInTheDocument()
   })
 
+  it('hides the citation stat line for 0-citation articles in New & Notable mode, but keeps it for nonzero ones', async () => {
+    // Arrange
+    const brandNew = {
+      pmid: '111',
+      title: 'A brand new article',
+      abstract: null,
+      authors: [],
+      journal: null,
+      pub_date: '2026/Jul',
+      doi: null,
+      citation_count: 0,
+      velocity: 0,
+    }
+    const alreadyCited = {
+      pmid: '222',
+      title: 'A new article already gaining traction',
+      abstract: null,
+      authors: [],
+      journal: null,
+      pub_date: '2026/Jun',
+      doi: null,
+      citation_count: 3,
+      velocity: 0.1,
+    }
+    mockedGetTrending.mockResolvedValue(
+      makeTrendingResponse({ mode: 'new_notable', results: [brandNew, alreadyCited] })
+    )
+    await renderPage()
+    await screen.findByRole('heading', { name: /a brand new article/i })
+
+    // Act
+    await userEvent.click(screen.getByRole('radio', { name: /new & notable/i }))
+    await screen.findByRole('heading', { name: /a brand new article/i })
+
+    // Assert
+    expect(screen.queryByText(/0 citations/i)).not.toBeInTheDocument()
+    expect(screen.getByText('3 citations')).toBeInTheDocument()
+  })
+
   it('disables a specialty pill already known to have no results at the current range', async () => {
     // Arrange
     mockedGetTrendingAvailability.mockResolvedValue({

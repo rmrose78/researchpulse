@@ -29,6 +29,12 @@ export default function TrendingPage() {
   const citationStats = useMemo(() => {
     const map: Record<string, CitationStat> = {}
     for (const article of trendingArticles) {
+      // A 0-citation article is the expected, normal case in New & Notable
+      // (recency is the point) — showing "0 citations" there reads as a
+      // contradiction of "notable," so we omit the line entirely. A
+      // nonzero count on a brand-new article is a genuine signal worth
+      // keeping.
+      if (mode === 'new_notable' && article.citation_count === 0) continue
       map[article.pmid] =
         mode === 'trending'
           ? { count: article.citation_count, velocity: article.velocity }

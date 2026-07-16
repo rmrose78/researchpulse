@@ -81,3 +81,58 @@ copied/bookmarked/reloaded, which only a URL-based store actually satisfies.
 count to `0` rather than excluding it outright, but only *keeps* 0-count
 articles when `mode == "new_notable"` — Trending and Most Cited still
 exclude them exactly as before Issue 3.
+
+## Follow-up: New & Notable Sampling Fix + "0 Citations" Copy + Mobile Hamburger Nav (post-ship)
+
+During developer visual review (before commit), two issues surfaced:
+
+**Window-days dilution bug in New & Notable.** The mode reused the same
+multi-slice pool-sampling as Trending/Most Cited (`window_days` split into
+~90-day slices, `POOL_SIZE=200` divided evenly across them). For a
+recency-sorted mode this was backwards: picking **2 years** diluted the
+newest slice's candidate budget (200 ÷ ~8 slices ≈ 25) compared to
+**60 days** (the full 200, one slice) — wider range meant *fewer* genuinely
+new candidates, the opposite of user intuition. Fixed by splitting
+`_rank_for_window`'s fetch logic into two helpers in
+`backend/app/services/trending.py`: `_fetch_sliced_pool` (unchanged
+behavior, still used by `trending`/`most_cited`) and a new `_fetch_newest`
+(a single non-sliced PubMed query spanning the full selected window,
+relying on newest-first ordering) used only for `new_notable`. Verified
+live: the top articles at a 60-day window and a 730-day window are now
+identical — `window_days` for this mode only matters as a thinness
+safety-valve (a wider range surfaces older-but-still-recent content once
+the newest well runs dry), not a dilution factor.
+
+**"0 citations" hidden in New & Notable.** A 0-citation card next to the
+word "notable" read as a contradiction — there's no independent
+significance signal in this mode beyond specialty relevance (via the
+hybrid query) and recency, so a bald "0 citations" undersold articles that
+are supposed to be here precisely because they're brand new. Fixed in
+`frontend/src/pages/trending-page.tsx`'s `citationStats` memo: no map
+entry is created (so `ArticleCard` renders no stat line at all) when
+`mode === 'new_notable' && article.citation_count === 0`. A nonzero count
+on a brand-new article is still shown — it's a genuine signal (already
+gaining traction despite being new) worth keeping.
+
+**Mobile hamburger nav.** The nav bar previously just wrapped its 4 links
+onto multiple lines on narrow screens — no hamburger at all. Added a new
+`frontend/src/components/layout/mobile-nav/mobile-nav.tsx`, a controlled
+Radix Dialog (same `@radix-ui/react-dialog` dependency as
+`components/ui/modal/`) opening a full-screen frosted-glass overlay with
+large stacked nav links, visible only below the desktop breakpoint (the
+existing horizontal `.navLinks` list is now desktop-only via CSS). Nav
+items were extracted into a shared `frontend/src/components/layout/nav-items.ts`
+so the desktop list and the mobile overlay render from one source instead
+of duplicating the link set.
+
+**Housekeeping**: also found and removed ~15 stray duplicate files across
+the repo (`<name> 2.py`/`.ts`), an iCloud Drive sync-conflict artifact
+(this repo lives under `Desktop/`) unrelated to any of this session's
+edits. Several were stale pre-mode-threading test/source snapshots that
+pytest's `test_*.py` glob was picking up alongside the real files, causing
+spurious failures against the *current* code — this, not a missed
+pre-commit check, was the cause of the test failures the developer saw.
+All were verified as strict stale subsets of their canonical counterparts
+(via `diff`) before removal; they were tracked-but-clean in git, so
+nothing is lost (recoverable via `git checkout` from history if ever
+needed).

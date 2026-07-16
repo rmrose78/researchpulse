@@ -158,3 +158,79 @@ class TestRankForWindowSampling:
 
         # Assert
         assert len(ranked) == 1
+
+
+class TestRankForWindowNewNotableSampling:
+    @pytest.mark.asyncio
+    async def test_makes_a_single_query_not_sliced(self):
+        # Arrange
+        call_log = []
+
+        async def fake_search(query, max_results, date_from, date_to, client):
+            call_log.append((date_from, date_to, max_results))
+            return SearchResponse(total=0, results=[], query=query)
+
+        with patch.object(trending_service.pubmed_service, "search", side_effect=fake_search), \
+             patch.object(
+                 trending_service.semantic_scholar_service,
+                 "get_citation_counts",
+                 new=AsyncMock(return_value={}),
+             ):
+            # Act — a 2-year window would be split into ~8 slices for the
+            # other modes; New & Notable must still make exactly one call
+            await trending_service._rank_for_window(
+                "mesh query", AsyncMock(), date(2026, 7, 1), 730, mode="new_notable"
+            )
+
+        # Assert
+        assert len(call_log) == 1
+
+    @pytest.mark.asyncio
+    async def test_always_requests_full_pool_size_regardless_of_window(self):
+        # Arrange
+        captured_max_results = []
+
+        async def fake_search(query, max_results, date_from, date_to, client):
+            captured_max_results.append(max_results)
+            return SearchResponse(total=0, results=[], query=query)
+
+        with patch.object(trending_service.pubmed_service, "search", side_effect=fake_search), \
+             patch.object(
+                 trending_service.semantic_scholar_service,
+                 "get_citation_counts",
+                 new=AsyncMock(return_value={}),
+             ):
+            # Act — a 60-day and a 730-day window should request the same budget
+            await trending_service._rank_for_window(
+                "mesh query", AsyncMock(), date(2026, 7, 1), 60, mode="new_notable"
+            )
+            await trending_service._rank_for_window(
+                "mesh query", AsyncMock(), date(2026, 7, 1), 730, mode="new_notable"
+            )
+
+        # Assert — proves the dilution bug is fixed: wider windows no
+        # longer shrink the newest-candidate budget
+        assert captured_max_results == [trending_service.POOL_SIZE, trending_service.POOL_SIZE]
+
+    @pytest.mark.asyncio
+    async def test_queries_the_full_selected_window_as_date_bounds(self):
+        # Arrange
+        captured_dates = []
+
+        async def fake_search(query, max_results, date_from, date_to, client):
+            captured_dates.append((date_from, date_to))
+            return SearchResponse(total=0, results=[], query=query)
+
+        with patch.object(trending_service.pubmed_service, "search", side_effect=fake_search), \
+             patch.object(
+                 trending_service.semantic_scholar_service,
+                 "get_citation_counts",
+                 new=AsyncMock(return_value={}),
+             ):
+            # Act
+            await trending_service._rank_for_window(
+                "mesh query", AsyncMock(), date(2026, 7, 1), 180, mode="new_notable"
+            )
+
+        # Assert
+        assert captured_dates == [("2026/01/02", "2026/07/01")]

@@ -149,13 +149,9 @@ def window_slices(today: date, window_days: int) -> list[tuple[str, str]]:
 
 # --- PubMed pool + citation lookup ------------------------------------------
 
-async def _rank_for_window(
-    mesh_query: str,
-    client: httpx.AsyncClient,
-    today: date,
-    window_days: int,
-    mode: str = DEFAULT_MODE,
-) -> list[TrendingArticle]:
+async def _fetch_sliced_pool(
+    mesh_query: str, client: httpx.AsyncClient, today: date, window_days: int
+) -> list[ArticleSearchResult]:
     slices = window_slices(today, window_days)
     per_slice = max(1, POOL_SIZE // len(slices))
 
@@ -173,6 +169,39 @@ async def _rank_for_window(
             if article.pmid not in seen_pmids:
                 seen_pmids.add(article.pmid)
                 all_articles.append(article)
+    return all_articles
+
+
+async def _fetch_newest(
+    mesh_query: str, client: httpx.AsyncClient, today: date, window_days: int
+) -> list[ArticleSearchResult]:
+    # New & Notable: a single query across the whole window, relying on
+    # PubMed's newest-first ordering — unlike the sliced pool, this never
+    # thins the newest candidates as window_days grows, since the full
+    # POOL_SIZE budget always goes to this one most-recent query.
+    date_from = (today - timedelta(days=window_days)).strftime("%Y/%m/%d")
+    date_to = today.strftime("%Y/%m/%d")
+    response = await pubmed_service.search(
+        query=mesh_query,
+        max_results=POOL_SIZE,
+        date_from=date_from,
+        date_to=date_to,
+        client=client,
+    )
+    return list(response.results)
+
+
+async def _rank_for_window(
+    mesh_query: str,
+    client: httpx.AsyncClient,
+    today: date,
+    window_days: int,
+    mode: str = DEFAULT_MODE,
+) -> list[TrendingArticle]:
+    if mode == "new_notable":
+        all_articles = await _fetch_newest(mesh_query, client, today, window_days)
+    else:
+        all_articles = await _fetch_sliced_pool(mesh_query, client, today, window_days)
 
     pmids = [article.pmid for article in all_articles]
     citation_counts = await semantic_scholar_service.get_citation_counts(client, pmids)

@@ -1,5 +1,6 @@
 import { describe, it, expect } from '@jest/globals'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { axe } from 'jest-axe'
 import Layout from './layout'
@@ -113,5 +114,42 @@ describe('Layout', () => {
 
     // Assert
     expect(results).toHaveNoViolations()
+  })
+
+  it('renders a hamburger trigger that opens a full-screen nav overlay with all nav links', async () => {
+    // Arrange
+    renderLayout()
+
+    // Act
+    await userEvent.click(screen.getByRole('button', { name: /open menu/i }))
+
+    // Assert
+    const dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByRole('link', { name: /^trending$/i })).toHaveAttribute('href', '/')
+    expect(within(dialog).getByRole('link', { name: /^search pubmed$/i })).toHaveAttribute(
+      'href',
+      '/search'
+    )
+    expect(within(dialog).getByRole('link', { name: /^reading list$/i })).toHaveAttribute(
+      'href',
+      '/reading-list'
+    )
+    expect(within(dialog).getByRole('link', { name: /how it works/i })).toHaveAttribute(
+      'href',
+      '/how-it-works'
+    )
+  })
+
+  it('closes the nav overlay after clicking a link inside it', async () => {
+    // Arrange
+    renderLayout()
+    await userEvent.click(screen.getByRole('button', { name: /open menu/i }))
+    const dialog = await screen.findByRole('dialog')
+
+    // Act
+    await userEvent.click(within(dialog).getByRole('link', { name: /^reading list$/i }))
+
+    // Assert
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
   })
 })
