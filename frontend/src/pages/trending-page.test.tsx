@@ -4,18 +4,30 @@ import userEvent from '@testing-library/user-event'
 import { axe } from 'jest-axe'
 import TrendingPage from './trending-page'
 import ReadingListProvider from '@/components/providers/reading-list-provider'
-import { getSavedArticles, searchArticles } from '@/utils/api'
-import type { ArticleSearchResult, SearchResponse } from '@/types'
+import { getSavedArticles, getTrending, searchArticles } from '@/utils/api'
+import { DEFAULT_SPECIALTY } from '@/utils/specialties'
+import type { ArticleSearchResult, SearchResponse, TrendingResponse } from '@/types'
 
 jest.mock('@/utils/api', () => ({
   searchArticles: jest.fn(),
   getSavedArticles: jest.fn(),
   saveArticle: jest.fn(),
   removeSavedArticle: jest.fn(),
+  getTrending: jest.fn(),
 }))
 
 const mockedSearchArticles = jest.mocked(searchArticles)
 const mockedGetSavedArticles = jest.mocked(getSavedArticles)
+const mockedGetTrending = jest.mocked(getTrending)
+
+function makeTrendingResponse(overrides: Partial<TrendingResponse> = {}): TrendingResponse {
+  return {
+    specialty: DEFAULT_SPECIALTY,
+    computed_at: '2026-01-01T00:00:00Z',
+    results: [],
+    ...overrides,
+  }
+}
 
 async function renderPage() {
   const utils = render(
@@ -50,6 +62,8 @@ beforeEach(() => {
   mockedSearchArticles.mockReset()
   mockedGetSavedArticles.mockReset()
   mockedGetSavedArticles.mockResolvedValue([])
+  mockedGetTrending.mockReset()
+  mockedGetTrending.mockResolvedValue(makeTrendingResponse())
   sessionStorage.clear()
 })
 
@@ -58,15 +72,82 @@ async function expandSearch() {
 }
 
 describe('TrendingPage', () => {
-  it('shows trending content and a search toggle by default, with no search form', async () => {
+  it('shows trending content, the specialty selector, and a search toggle by default', async () => {
     // Arrange & Act
     await renderPage()
 
     // Assert
     expect(screen.getByRole('heading', { name: /^trending$/i })).toBeInTheDocument()
-    expect(screen.getByText(/check back soon/i)).toBeInTheDocument()
+    expect(screen.getByRole('radiogroup', { name: /specialty/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^search pubmed$/i })).toBeInTheDocument()
     expect(screen.queryByRole('textbox', { name: /search pubmed/i })).not.toBeInTheDocument()
+  })
+
+  it('shows trending results once loaded, with a freshness indicator', async () => {
+    // Arrange
+    mockedGetTrending.mockResolvedValue(
+      makeTrendingResponse({
+        computed_at: '2026-01-01T00:00:00Z',
+        results: [
+          {
+            pmid: '123',
+            title: 'A trending cardiac study',
+            abstract: null,
+            authors: [],
+            journal: null,
+            pub_date: '2025/Jan',
+            doi: null,
+            citation_count: 14,
+            velocity: 0.8,
+          },
+        ],
+      })
+    )
+
+    // Act
+    await renderPage()
+
+    // Assert
+    expect(await screen.findByRole('heading', { name: /a trending cardiac study/i })).toBeInTheDocument()
+    expect(screen.getByText('14 citations · velocity 0.80')).toBeInTheDocument()
+    expect(screen.getByText(/updated .* · via semantic scholar/i)).toBeInTheDocument()
+  })
+
+  it('shows an empty state when a specialty has no trending results', async () => {
+    // Arrange
+    mockedGetTrending.mockResolvedValue(makeTrendingResponse({ results: [] }))
+
+    // Act
+    await renderPage()
+
+    // Assert
+    expect(await screen.findByText(/no trending articles found/i)).toBeInTheDocument()
+  })
+
+  it('shows an error state with retry when trending fails to load', async () => {
+    // Arrange
+    mockedGetTrending.mockRejectedValueOnce(new Error('API error: 502'))
+    mockedGetTrending.mockResolvedValueOnce(makeTrendingResponse())
+    await renderPage()
+    await screen.findByRole('alert')
+
+    // Act
+    await userEvent.click(screen.getByRole('button', { name: /retry/i }))
+
+    // Assert
+    await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument())
+  })
+
+  it('switching specialty requests trending data for the newly selected specialty', async () => {
+    // Arrange
+    await renderPage()
+    await waitFor(() => expect(mockedGetTrending).toHaveBeenCalledTimes(1))
+
+    // Act
+    await userEvent.click(screen.getByRole('radio', { name: /oncology/i }))
+
+    // Assert
+    await waitFor(() => expect(mockedGetTrending).toHaveBeenLastCalledWith('oncology'))
   })
 
   it('clicking the search toggle reveals the search form and hides the trending content', async () => {

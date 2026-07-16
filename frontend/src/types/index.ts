@@ -30,3 +30,19 @@ export interface SavedArticle {
   doi: string | null
   saved_at: string
 }
+
+export interface CitationStat {
+  count: number
+  velocity: number
+}
+
+export interface TrendingArticle extends ArticleSearchResult {
+  citation_count: number
+  velocity: number
+}
+
+export interface TrendingResponse {
+  specialty: string
+  computed_at: string
+  results: TrendingArticle[]
+}

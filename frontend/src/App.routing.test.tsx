@@ -2,13 +2,14 @@ import { describe, it, expect, jest, beforeEach } from '@jest/globals'
 import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App'
-import { getSavedArticles, searchArticles } from '@/utils/api'
+import { getSavedArticles, getTrending, searchArticles } from '@/utils/api'
 
 jest.mock('@/utils/api', () => ({
   searchArticles: jest.fn(),
   getSavedArticles: jest.fn(),
   saveArticle: jest.fn(),
   removeSavedArticle: jest.fn(),
+  getTrending: jest.fn(),
 }))
 
 function navigateTo(path: string) {
@@ -27,6 +28,12 @@ beforeEach(() => {
   jest.mocked(searchArticles).mockReset()
   jest.mocked(getSavedArticles).mockReset()
   jest.mocked(getSavedArticles).mockResolvedValue([])
+  jest.mocked(getTrending).mockReset()
+  jest.mocked(getTrending).mockResolvedValue({
+    specialty: 'cardiology',
+    computed_at: '2026-01-01T00:00:00Z',
+    results: [],
+  })
   sessionStorage.clear()
   navigateTo('/')
 })

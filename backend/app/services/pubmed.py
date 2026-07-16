@@ -27,6 +27,17 @@ class PubMedService:
             return resp
         return resp
 
+    async def _request(
+        self, url: str, params: dict, client: httpx.AsyncClient | None
+    ) -> httpx.Response:
+        # Callers that already hold a shared client (e.g. the app-lifespan
+        # client trending uses) pass it in; everyone else falls back to a
+        # short-lived client, preserving the original per-call behavior.
+        if client is not None:
+            return await self._get_with_retry(client, url, params=params)
+        async with httpx.AsyncClient() as owned_client:
+            return await self._get_with_retry(owned_client, url, params=params)
+
     async def search(
         self,
         query: str,
@@ -35,6 +46,7 @@ class PubMedService:
         date_from: str | None = None,
         date_to: str | None = None,
         journal: str | None = None,
+        client: httpx.AsyncClient | None = None,
     ) -> SearchResponse:
         # Build the query string
         full_query = query
@@ -44,20 +56,19 @@ class PubMedService:
             full_query += f' AND {date_from}:{date_to}[Date - Publication]'
 
         # Step 1: esearch - get matching PMIDs
-        async with httpx.AsyncClient() as client:
-            search_resp = await self._get_with_retry(
-                client,
-                f"{self.base_url}/esearch.fcgi",
-                params={
-                    **self.base_params,
-                    "db": "pubmed",
-                    "term": full_query,
-                    "retmax": max_results,
-                    "retstart": offset,
-                    "usehistory": "y",
-                }
-            )
-            search_resp.raise_for_status()
+        search_resp = await self._request(
+            f"{self.base_url}/esearch.fcgi",
+            {
+                **self.base_params,
+                "db": "pubmed",
+                "term": full_query,
+                "retmax": max_results,
+                "retstart": offset,
+                "usehistory": "y",
+            },
+            client,
+        )
+        search_resp.raise_for_status()
 
         root = ET.fromstring(search_resp.text)
         pmids = [id_elem.text for id_elem in root.findall(".//Id")]
@@ -65,24 +76,25 @@ class PubMedService:
 
         if not pmids:
             return SearchResponse(total=total, results=[] , query=query)
-    
+
         # Step 2: efetch - get full records for those PMIDs
-        articles = await self._fetch_articles(pmids)
+        articles = await self._fetch_articles(pmids, client=client)
         return SearchResponse(total=total, results=articles, query=query)
-    
-    async def _fetch_articles(self, pmids: list[str]) -> list[ArticleSearchResult]:
-        async with httpx.AsyncClient() as client:
-            fetch_resp = await self._get_with_retry(
-                client,
-                f"{self.base_url}/efetch.fcgi",
-                params = {
-                    **self.base_params,
-                    "db": "pubmed",
-                    "id": ",".join(pmids),
-                    "rettype": "abstract",
-                }
-            )
-            fetch_resp.raise_for_status()
+
+    async def _fetch_articles(
+        self, pmids: list[str], client: httpx.AsyncClient | None = None
+    ) -> list[ArticleSearchResult]:
+        fetch_resp = await self._request(
+            f"{self.base_url}/efetch.fcgi",
+            {
+                **self.base_params,
+                "db": "pubmed",
+                "id": ",".join(pmids),
+                "rettype": "abstract",
+            },
+            client,
+        )
+        fetch_resp.raise_for_status()
         return self._parse_articles(fetch_resp.text)
     
     def _parse_articles(self, xml_text: str) -> list[ArticleSearchResult]:

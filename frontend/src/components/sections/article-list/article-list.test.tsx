@@ -4,7 +4,7 @@ import { axe } from 'jest-axe'
 import ArticleList from './article-list'
 import ReadingListProvider from '@/components/providers/reading-list-provider'
 import { getSavedArticles } from '@/utils/api'
-import type { ArticleSearchResult } from '@/types'
+import type { ArticleSearchResult, CitationStat } from '@/types'
 
 jest.mock('@/utils/api', () => ({
   getSavedArticles: jest.fn(),
@@ -27,10 +27,13 @@ function makeArticle(overrides: Partial<ArticleSearchResult> = {}): ArticleSearc
   }
 }
 
-async function renderList(articles: ArticleSearchResult[]) {
+async function renderList(
+  articles: ArticleSearchResult[],
+  citationStats?: Record<string, CitationStat>
+) {
   const utils = render(
     <ReadingListProvider>
-      <ArticleList articles={articles} />
+      <ArticleList articles={articles} citationStats={citationStats} />
     </ReadingListProvider>
   )
   // Flush the provider's initial getSavedArticles() fetch so its resolution
@@ -66,6 +69,18 @@ describe('ArticleList', () => {
 
     // Assert
     expect(screen.queryAllByRole('article')).toHaveLength(0)
+  })
+
+  it('passes the matching citationStat through to each card by pmid', async () => {
+    // Arrange
+    const articles = [makeArticle({ pmid: '1' }), makeArticle({ pmid: '2' })]
+    const citationStats = { '1': { count: 14, velocity: 0.8 } }
+
+    // Act
+    await renderList(articles, citationStats)
+
+    // Assert
+    expect(screen.getByText('14 citations · velocity 0.80')).toBeInTheDocument()
   })
 
   it('has no automatically detectable accessibility violations', async () => {

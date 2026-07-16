@@ -1,4 +1,4 @@
-import { searchArticles, PAGE_SIZE } from './api'
+import { getTrending, searchArticles, PAGE_SIZE } from './api'
 import type { SearchFilters } from '@/types'
 
 jest.mock('./env', () => ({ API_BASE_URL: 'http://localhost:8000' }))
@@ -102,5 +102,29 @@ describe('searchArticles', () => {
 
     // Assert
     expect(calledParams().get('offset')).toBe('20')
+  })
+})
+
+describe('getTrending', () => {
+  it('sends the specialty as a query param', async () => {
+    // Arrange
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ specialty: 'cardiology', computed_at: '2024-01-01T00:00:00Z', results: [] }),
+    }) as jest.Mock
+
+    // Act
+    await getTrending('cardiology')
+
+    // Assert
+    expect(calledParams().get('specialty')).toBe('cardiology')
+  })
+
+  it('throws on a non-ok response', async () => {
+    // Arrange
+    global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 422 }) as jest.Mock
+
+    // Act & Assert
+    await expect(getTrending('not_real')).rejects.toThrow('422')
   })
 })
