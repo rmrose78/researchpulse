@@ -1,28 +1,6 @@
 @use '@/styles/_variables.scss' as *;
 @use '@/styles/_mixins.scss' as *;
 
-.searchToggle {
-  align-self: center;
-  padding: 0.625rem 1.25rem;
-  border: 1px solid $gray-400;
-  border-radius: 0.5rem;
-  background: transparent;
-  color: $clinical-blue;
-  font-family: $font-body;
-  font-weight: 600;
-  font-size: 0.95rem;
-  transition: $transition-base;
-
-  &:hover {
-    border-color: $clinical-blue;
-    background: rgba(45, 125, 210, 0.06);
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    transition: none;
-  }
-}
-
 .trendingContent {
   display: flex;
   flex-direction: column;
@@ -33,13 +11,6 @@
   width: 100%;
   max-width: 48rem;
   margin: 0 auto;
-}
-
-.heading {
-  font-family: $font-heading;
-  font-weight: 700;
-  font-size: 1.25rem;
-  color: $navy-text;
 }
 
 .message {

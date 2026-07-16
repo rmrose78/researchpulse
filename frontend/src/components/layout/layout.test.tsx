@@ -1,17 +1,8 @@
-import { describe, it, expect, jest } from '@jest/globals'
+import { describe, it, expect } from '@jest/globals'
 import { render, screen, within } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { axe } from 'jest-axe'
 import Layout from './layout'
-import { RESET_TO_TRENDING_EVENT } from '@/hooks/use-search'
-
-// Layout only imports use-search.ts for the reset-event constant, but that
-// module also imports utils/api.ts (which uses import.meta.env) — mock it
-// so ts-jest never has to transpile the real module in this test file.
-jest.mock('@/utils/api', () => ({
-  searchArticles: jest.fn(),
-}))
 
 function renderLayout(initialEntry = '/') {
   return render(
@@ -56,12 +47,13 @@ describe('Layout', () => {
     expect(brandLink).toHaveAttribute('href', '/')
   })
 
-  it('renders nav links to trending, reading list, and how it works, with the brand also covering home', () => {
+  it('renders nav links to trending, search, reading list, and how it works, with the brand also covering home', () => {
     // Arrange
     renderLayout()
 
     // Act & Assert
     expect(screen.getByRole('link', { name: /^trending$/i })).toHaveAttribute('href', '/')
+    expect(screen.getByRole('link', { name: /^search pubmed$/i })).toHaveAttribute('href', '/search')
     expect(screen.getByRole('link', { name: /^reading list$/i })).toHaveAttribute(
       'href',
       '/reading-list'
@@ -71,7 +63,6 @@ describe('Layout', () => {
       'href',
       '/how-it-works'
     )
-    expect(screen.queryByRole('link', { name: /^search$/i })).not.toBeInTheDocument()
   })
 
   it('renders a footer link to how it works alongside the copyright notice', () => {
@@ -87,7 +78,7 @@ describe('Layout', () => {
     expect(footer).toHaveTextContent(/researchpulse/i)
   })
 
-  it('marks the brand and the trending link as active via aria-current on the merged trending/search route, and no others', () => {
+  it('marks the brand and the trending link as active via aria-current on the trending route, and no others', () => {
     // Arrange
     renderLayout('/')
 
@@ -100,22 +91,6 @@ describe('Layout', () => {
     expect(brandLink).toHaveAttribute('aria-current', 'page')
     expect(trendingLink).toHaveAttribute('aria-current', 'page')
     expect(readingListLink).not.toHaveAttribute('aria-current')
-  })
-
-  it('dispatches a reset-to-trending event when the Trending link or brand is clicked', async () => {
-    // Arrange
-    const user = userEvent.setup()
-    const onReset = jest.fn()
-    window.addEventListener(RESET_TO_TRENDING_EVENT, onReset)
-    renderLayout()
-
-    // Act
-    await user.click(screen.getByRole('link', { name: /^trending$/i }))
-    await user.click(screen.getByRole('link', { name: /researchpulse home/i }))
-
-    // Assert
-    expect(onReset).toHaveBeenCalledTimes(2)
-    window.removeEventListener(RESET_TO_TRENDING_EVENT, onReset)
   })
 
   it('renders a footer landmark with a copyright notice', () => {
