@@ -3,6 +3,7 @@ import type {
   SavedArticle,
   SearchFilters,
   SearchResponse,
+  TrendingAvailabilityResponse,
   TrendingResponse,
 } from '@/types'
 import { toPubMedDate } from './format'
@@ -62,9 +63,20 @@ export async function getSavedArticles(): Promise<SavedArticle[]> {
   return res.json()
 }
 
-export async function getTrending(specialty: string): Promise<TrendingResponse> {
-  const params = new URLSearchParams({ specialty })
+export async function getTrending(specialty: string, windowDays: number): Promise<TrendingResponse> {
+  const params = new URLSearchParams({ specialty, window_days: String(windowDays) })
   const res = await fetch(`${BASE_URL}/api/trending/?${params.toString()}`)
+  if (!res.ok) throw new Error(`API error: ${res.status}`)
+  return res.json()
+}
+
+// Cache-only lookup — never triggers a PubMed/Semantic Scholar call on the
+// backend, so this is safe to call on every time-range change.
+export async function getTrendingAvailability(
+  windowDays: number
+): Promise<TrendingAvailabilityResponse> {
+  const params = new URLSearchParams({ window_days: String(windowDays) })
+  const res = await fetch(`${BASE_URL}/api/trending/availability?${params.toString()}`)
   if (!res.ok) throw new Error(`API error: ${res.status}`)
   return res.json()
 }

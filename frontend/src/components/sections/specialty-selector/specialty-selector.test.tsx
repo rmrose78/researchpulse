@@ -5,8 +5,14 @@ import { axe } from 'jest-axe'
 import SpecialtySelector from './specialty-selector'
 import { SPECIALTIES, DEFAULT_SPECIALTY } from '@/utils/specialties'
 
-function renderSelector(selected = DEFAULT_SPECIALTY, onSelect = jest.fn()) {
-  return render(<SpecialtySelector selected={selected} onSelect={onSelect} />)
+function renderSelector(
+  selected = DEFAULT_SPECIALTY,
+  onSelect = jest.fn(),
+  disabledSpecialties?: Set<string>
+) {
+  return render(
+    <SpecialtySelector selected={selected} onSelect={onSelect} disabledSpecialties={disabledSpecialties} />
+  )
 }
 
 describe('SpecialtySelector', () => {
@@ -57,6 +63,49 @@ describe('SpecialtySelector', () => {
   it('has no automatically detectable accessibility violations', async () => {
     // Arrange
     const { container } = renderSelector()
+
+    // Act
+    const results = await axe(container)
+
+    // Assert
+    expect(results).toHaveNoViolations()
+  })
+
+  it('disables a specialty known to have no results at the current range', () => {
+    // Arrange & Act
+    renderSelector(DEFAULT_SPECIALTY, jest.fn(), new Set([SPECIALTIES[1].key]))
+
+    // Assert
+    const disabledOption = screen.getByRole('radio', { name: new RegExp(SPECIALTIES[1].label) })
+    expect(disabledOption).toBeDisabled()
+    expect(disabledOption).toHaveAttribute('aria-disabled', 'true')
+    expect(disabledOption).toHaveAccessibleName(`${SPECIALTIES[1].label} (no results at this range)`)
+  })
+
+  it('does not disable specialties absent from disabledSpecialties', () => {
+    // Arrange & Act
+    renderSelector(DEFAULT_SPECIALTY, jest.fn(), new Set([SPECIALTIES[1].key]))
+
+    // Assert
+    expect(screen.getByRole('radio', { name: SPECIALTIES[0].label })).not.toBeDisabled()
+  })
+
+  it('never calls onSelect when clicking a disabled specialty', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const onSelect = jest.fn()
+    renderSelector(DEFAULT_SPECIALTY, onSelect, new Set([SPECIALTIES[1].key]))
+
+    // Act
+    await user.click(screen.getByRole('radio', { name: new RegExp(SPECIALTIES[1].label) }))
+
+    // Assert
+    expect(onSelect).not.toHaveBeenCalled()
+  })
+
+  it('has no automatically detectable accessibility violations with a specialty disabled', async () => {
+    // Arrange
+    const { container } = renderSelector(DEFAULT_SPECIALTY, jest.fn(), new Set([SPECIALTIES[1].key]))
 
     // Act
     const results = await axe(container)

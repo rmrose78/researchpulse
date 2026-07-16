@@ -1,15 +1,18 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { useTrending } from './use-trending'
-import { getTrending } from '@/utils/api'
+import { getTrending, getTrendingAvailability } from '@/utils/api'
 import { SPECIALTIES, DEFAULT_SPECIALTY } from '@/utils/specialties'
-import type { TrendingArticle, TrendingResponse } from '@/types'
+import { DEFAULT_WINDOW_DAYS, TIME_RANGES } from '@/utils/time-ranges'
+import type { TrendingArticle, TrendingAvailabilityResponse, TrendingResponse } from '@/types'
 
 jest.mock('@/utils/api', () => ({
   getTrending: jest.fn(),
+  getTrendingAvailability: jest.fn(),
 }))
 
 const mockedGetTrending = jest.mocked(getTrending)
+const mockedGetTrendingAvailability = jest.mocked(getTrendingAvailability)
 
 function makeArticle(overrides: Partial<TrendingArticle> = {}): TrendingArticle {
   return {
@@ -29,27 +32,38 @@ function makeArticle(overrides: Partial<TrendingArticle> = {}): TrendingArticle 
 function makeResponse(overrides: Partial<TrendingResponse> = {}): TrendingResponse {
   return {
     specialty: DEFAULT_SPECIALTY,
+    window_days: DEFAULT_WINDOW_DAYS,
     computed_at: '2026-01-01T00:00:00Z',
     results: [makeArticle()],
     ...overrides,
   }
 }
 
+function makeAvailability(
+  overrides: Partial<TrendingAvailabilityResponse> = {}
+): TrendingAvailabilityResponse {
+  return { window_days: DEFAULT_WINDOW_DAYS, available: {}, ...overrides }
+}
+
 beforeEach(() => {
   mockedGetTrending.mockReset()
   mockedGetTrending.mockResolvedValue(makeResponse())
+  mockedGetTrendingAvailability.mockReset()
+  mockedGetTrendingAvailability.mockResolvedValue(makeAvailability())
 })
 
 describe('useTrending', () => {
-  it('starts on the default specialty and loads it on mount', async () => {
+  it('starts on the default specialty/window and loads both on mount', async () => {
     // Arrange & Act
     const { result } = renderHook(() => useTrending())
 
     // Assert
     expect(result.current.specialty).toBe(DEFAULT_SPECIALTY)
+    expect(result.current.windowDays).toBe(DEFAULT_WINDOW_DAYS)
     expect(result.current.status).toBe('loading')
     await waitFor(() => expect(result.current.status).toBe('success'))
-    expect(mockedGetTrending).toHaveBeenCalledWith(DEFAULT_SPECIALTY)
+    expect(mockedGetTrending).toHaveBeenCalledWith(DEFAULT_SPECIALTY, DEFAULT_WINDOW_DAYS)
+    expect(mockedGetTrendingAvailability).toHaveBeenCalledWith(DEFAULT_WINDOW_DAYS)
   })
 
   it('exposes the fetched articles and freshness timestamp on success', async () => {
@@ -82,7 +96,7 @@ describe('useTrending', () => {
     await waitFor(() => expect(result.current.status).toBe('success'))
   })
 
-  it('switching specialty flips back to loading and refetches for the new specialty', async () => {
+  it('switching specialty flips back to loading and refetches for the new specialty at the current window', async () => {
     // Arrange
     const secondSpecialty = SPECIALTIES[1].key
     const { result } = renderHook(() => useTrending())
@@ -96,7 +110,7 @@ describe('useTrending', () => {
     expect(result.current.status).toBe('loading')
     expect(result.current.specialty).toBe(secondSpecialty)
     await waitFor(() => expect(result.current.status).toBe('success'))
-    expect(mockedGetTrending).toHaveBeenLastCalledWith(secondSpecialty)
+    expect(mockedGetTrending).toHaveBeenLastCalledWith(secondSpecialty, DEFAULT_WINDOW_DAYS)
   })
 
   it('ignores a stale response from a superseded specialty switch', async () => {
@@ -119,5 +133,64 @@ describe('useTrending', () => {
     // Assert — the late first-request response never overwrites the second's result
     expect(result.current.specialty).toBe(secondSpecialty)
     expect(result.current.status).toBe('success')
+  })
+
+  it('switching the time range never changes the currently selected specialty', async () => {
+    // Arrange
+    const { result } = renderHook(() => useTrending())
+    await waitFor(() => expect(result.current.status).toBe('success'))
+    const newWindow = TIME_RANGES[0].days
+
+    // Act
+    act(() => result.current.setWindowDays(newWindow))
+    await waitFor(() => expect(result.current.status).toBe('success'))
+
+    // Assert — the range changed, the specialty stayed exactly as it was
+    expect(result.current.windowDays).toBe(newWindow)
+    expect(result.current.specialty).toBe(DEFAULT_SPECIALTY)
+    expect(mockedGetTrending).toHaveBeenLastCalledWith(DEFAULT_SPECIALTY, newWindow)
+  })
+
+  it('switching the time range flips to loading and re-fetches availability for the new range', async () => {
+    // Arrange
+    const { result } = renderHook(() => useTrending())
+    await waitFor(() => expect(result.current.status).toBe('success'))
+    const newWindow = TIME_RANGES[3].days
+
+    // Act
+    act(() => result.current.setWindowDays(newWindow))
+
+    // Assert
+    expect(result.current.status).toBe('loading')
+    await waitFor(() => expect(result.current.status).toBe('success'))
+    expect(mockedGetTrendingAvailability).toHaveBeenLastCalledWith(newWindow)
+  })
+
+  it('exposes specialties known to be empty at the current window as disabled', async () => {
+    // Arrange
+    const emptySpecialty = SPECIALTIES[2].key
+    mockedGetTrendingAvailability.mockResolvedValue(
+      makeAvailability({ available: { [emptySpecialty]: false, [DEFAULT_SPECIALTY]: true } })
+    )
+
+    // Act
+    const { result } = renderHook(() => useTrending())
+    await waitFor(() => expect(result.current.status).toBe('success'))
+
+    // Assert
+    expect(result.current.disabledSpecialties.has(emptySpecialty)).toBe(true)
+    expect(result.current.disabledSpecialties.has(DEFAULT_SPECIALTY)).toBe(false)
+  })
+
+  it('leaves specialties clickable (not disabled) when availability fails to load', async () => {
+    // Arrange
+    mockedGetTrendingAvailability.mockRejectedValue(new Error('API error: 500'))
+
+    // Act
+    const { result } = renderHook(() => useTrending())
+    await waitFor(() => expect(result.current.status).toBe('success'))
+
+    // Assert — best-effort only, never blocks or breaks the page
+    expect(result.current.disabledSpecialties.size).toBe(0)
   })
 })

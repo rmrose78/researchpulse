@@ -7,6 +7,7 @@ import SearchSkeleton from '@/components/sections/search-skeleton/search-skeleto
 import EmptyState from '@/components/sections/empty-state/empty-state'
 import ErrorState from '@/components/sections/error-state/error-state'
 import SpecialtySelector from '@/components/sections/specialty-selector/specialty-selector'
+import TimeRangeSelector from '@/components/sections/time-range-selector/time-range-selector'
 import { useSearch } from '@/hooks/use-search'
 import { useTrending } from '@/hooks/use-trending'
 import { formatRelativeTime } from '@/utils/format'
@@ -36,9 +37,12 @@ export default function TrendingPage() {
   const {
     specialty,
     setSpecialty,
+    windowDays,
+    setWindowDays,
     status: trendingStatus,
     articles: trendingArticles,
     computedAt,
+    disabledSpecialties,
     retry: retryTrending,
   } = useTrending()
   const searchPanelId = useId()
@@ -103,7 +107,12 @@ export default function TrendingPage() {
           <h2 id="trending-heading" className={styles.heading}>
             Trending
           </h2>
-          <SpecialtySelector selected={specialty} onSelect={setSpecialty} />
+          <SpecialtySelector
+            selected={specialty}
+            onSelect={setSpecialty}
+            disabledSpecialties={disabledSpecialties}
+          />
+          <TimeRangeSelector selected={windowDays} onSelect={setWindowDays} />
           {computedAt && (
             <p className={styles.freshness}>
               Updated {formatRelativeTime(computedAt)} · via Semantic Scholar
@@ -112,7 +121,7 @@ export default function TrendingPage() {
           <div aria-live="polite" className={styles.trendingResults}>
             {trendingStatus === 'loading' && <SearchSkeleton />}
             {trendingStatus === 'success' && trendingArticles.length === 0 && (
-              <EmptyState message="No trending articles found for this specialty yet — check back soon." />
+              <EmptyState message="No trending articles found for this specialty at this time range — try a wider range." />
             )}
             {trendingStatus === 'success' && trendingArticles.length > 0 && (
               <ArticleList articles={trendingArticles} citationStats={citationStats} />

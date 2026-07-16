@@ -30,3 +30,12 @@ def test_trending_snapshot_specialty_is_indexed():
 
     # Act & Assert
     assert column.index is True
+
+
+def test_trending_snapshot_has_window_days_column():
+    # Arrange
+    column = TrendingSnapshot.__table__.columns["window_days"]
+
+    # Act & Assert — part of the cache key alongside specialty/mode, so a
+    # row must always have one; no sensible shared default across callers.
+    assert column.nullable is False

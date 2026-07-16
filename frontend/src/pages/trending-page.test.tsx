@@ -4,8 +4,9 @@ import userEvent from '@testing-library/user-event'
 import { axe } from 'jest-axe'
 import TrendingPage from './trending-page'
 import ReadingListProvider from '@/components/providers/reading-list-provider'
-import { getSavedArticles, getTrending, searchArticles } from '@/utils/api'
+import { getSavedArticles, getTrending, getTrendingAvailability, searchArticles } from '@/utils/api'
 import { DEFAULT_SPECIALTY } from '@/utils/specialties'
+import { DEFAULT_WINDOW_DAYS } from '@/utils/time-ranges'
 import type { ArticleSearchResult, SearchResponse, TrendingResponse } from '@/types'
 
 jest.mock('@/utils/api', () => ({
@@ -14,15 +15,18 @@ jest.mock('@/utils/api', () => ({
   saveArticle: jest.fn(),
   removeSavedArticle: jest.fn(),
   getTrending: jest.fn(),
+  getTrendingAvailability: jest.fn(),
 }))
 
 const mockedSearchArticles = jest.mocked(searchArticles)
 const mockedGetSavedArticles = jest.mocked(getSavedArticles)
 const mockedGetTrending = jest.mocked(getTrending)
+const mockedGetTrendingAvailability = jest.mocked(getTrendingAvailability)
 
 function makeTrendingResponse(overrides: Partial<TrendingResponse> = {}): TrendingResponse {
   return {
     specialty: DEFAULT_SPECIALTY,
+    window_days: DEFAULT_WINDOW_DAYS,
     computed_at: '2026-01-01T00:00:00Z',
     results: [],
     ...overrides,
@@ -64,6 +68,8 @@ beforeEach(() => {
   mockedGetSavedArticles.mockResolvedValue([])
   mockedGetTrending.mockReset()
   mockedGetTrending.mockResolvedValue(makeTrendingResponse())
+  mockedGetTrendingAvailability.mockReset()
+  mockedGetTrendingAvailability.mockResolvedValue({ window_days: DEFAULT_WINDOW_DAYS, available: {} })
   sessionStorage.clear()
 })
 
@@ -147,7 +153,40 @@ describe('TrendingPage', () => {
     await userEvent.click(screen.getByRole('radio', { name: /oncology/i }))
 
     // Assert
-    await waitFor(() => expect(mockedGetTrending).toHaveBeenLastCalledWith('oncology'))
+    await waitFor(() =>
+      expect(mockedGetTrending).toHaveBeenLastCalledWith('oncology', DEFAULT_WINDOW_DAYS)
+    )
+  })
+
+  it('shows the time range selector and switching it requests the current specialty at the new range', async () => {
+    // Arrange
+    await renderPage()
+    await waitFor(() => expect(mockedGetTrending).toHaveBeenCalledTimes(1))
+    expect(screen.getByRole('radiogroup', { name: /time range/i })).toBeInTheDocument()
+
+    // Act
+    await userEvent.click(screen.getByRole('radio', { name: '60 days' }))
+
+    // Assert
+    await waitFor(() =>
+      expect(mockedGetTrending).toHaveBeenLastCalledWith(DEFAULT_SPECIALTY, 60)
+    )
+  })
+
+  it('disables a specialty pill already known to have no results at the current range', async () => {
+    // Arrange
+    mockedGetTrendingAvailability.mockResolvedValue({
+      window_days: DEFAULT_WINDOW_DAYS,
+      available: { oncology: false },
+    })
+
+    // Act
+    await renderPage()
+
+    // Assert
+    await waitFor(() =>
+      expect(screen.getByRole('radio', { name: /oncology/i })).toBeDisabled()
+    )
   })
 
   it('clicking the search toggle reveals the search form and hides the trending content', async () => {

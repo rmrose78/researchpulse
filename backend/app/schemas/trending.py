@@ -10,5 +10,11 @@ class TrendingArticle(ArticleSearchResult):
 
 class TrendingResponse(BaseModel):
     specialty: str
+    window_days: int
     computed_at: datetime
     results: list[TrendingArticle]
+
+
+class TrendingAvailabilityResponse(BaseModel):
+    window_days: int
+    available: dict[str, bool]

@@ -43,6 +43,12 @@ export interface TrendingArticle extends ArticleSearchResult {
 
 export interface TrendingResponse {
   specialty: string
+  window_days: number
   computed_at: string
   results: TrendingArticle[]
+}
+
+export interface TrendingAvailabilityResponse {
+  window_days: number
+  available: Record<string, boolean>
 }
