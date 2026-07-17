@@ -4,8 +4,17 @@
 PUBMED_API_KEY=your_key_here
 SEMANTIC_SCHOLAR_API_KEY=your_key_here
 DATABASE_URL=postgresql://localhost/researchpulse
+FRONTEND_URL=http://localhost:5173
+
+`FRONTEND_URL` sets the allowed CORS origin — the deployed Netlify URL in
+production, defaulting to the local Vite dev server otherwise.
+
+Not yet implemented — Phase 3, not read by the app today:
 ANTHROPIC_API_KEY=your_key_here
 AI_ENABLED=false
 
 ### frontend/.env (never commit)
 VITE_API_URL=http://localhost:8000
+
+In Netlify's dashboard (Site settings → Environment variables), set
+`VITE_API_URL` to the deployed Railway backend URL. This is not a secret.

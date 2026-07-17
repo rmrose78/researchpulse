@@ -7,13 +7,17 @@ Get the codebase ready for its first real deploy — frontend to Netlify, backen
 Deploying now (rather than after Phase 3 is built) means any environment/infra surprises get caught against the current, simpler codebase instead of a bigger one. It also means Phase 3 work can be smoke-tested against a real deployed environment as it's built, instead of a big-bang deploy at the end.
 
 ## Acceptance Criteria
-- [ ] `backend/requirements.txt` exists, pinned to current working versions (`fastapi`, `uvicorn`, `SQLAlchemy`, `psycopg2-binary`, `pydantic`, `pydantic-settings`, `httpx`, `python-dotenv`, plus test-only deps split out or noted) — Railway/Nixpacks can't detect or build a Python app without one
-- [ ] CORS `allow_origins` in `backend/app/main.py` reads from a new `Settings` field (e.g. `frontend_url` / `FRONTEND_URL`) instead of the hardcoded `["http://localhost:5173"]`, defaulting to the current localhost value so local dev is unaffected
-- [ ] `netlify.toml` added at the repo root: build command (`cd frontend && npm run build`), publish directory (`frontend/dist`), and an SPA redirect rule (`/* /index.html 200`) so client-side routing doesn't 404 on refresh
-- [ ] Railway has a working start command for the backend (uvicorn, reading `PORT` from Railway's injected env var) — via `Procfile`, `railway.toml`, or Railway's own dashboard config, whichever this repo's conventions favor
-- [ ] `backend/.env.example` updated to include `SEMANTIC_SCHOLAR_API_KEY` (currently missing)
-- [ ] `docs/reference/environment.md` updated to match reality: add the new `FRONTEND_URL`/CORS var, and either remove the not-yet-implemented `ANTHROPIC_API_KEY`/`AI_ENABLED` entries or clearly mark them as "Phase 3, not yet read by the app"
-- [ ] Decide and document the DB schema strategy for this first deploy: either set up Alembic now, or explicitly keep `Base.metadata.create_all()` for this deploy with a follow-up issue filed for real migrations before Phase 3 adds any schema changes — don't silently ship without a documented decision either way
+- [x] `backend/requirements.txt` exists, pinned to current working versions (`fastapi`, `uvicorn`, `SQLAlchemy`, `psycopg2-binary`, `pydantic`, `pydantic-settings`, `httpx`, `python-dotenv`, plus test-only deps split out or noted) — Railway/Nixpacks can't detect or build a Python app without one
+  - `requirements-dev.txt` (references `-r requirements.txt`) holds `pytest`/`pytest-asyncio`, split out per the criterion
+- [x] CORS `allow_origins` in `backend/app/main.py` reads from a new `Settings` field (e.g. `frontend_url` / `FRONTEND_URL`) instead of the hardcoded `["http://localhost:5173"]`, defaulting to the current localhost value so local dev is unaffected
+- [x] `netlify.toml` added at the repo root: build command (`cd frontend && npm run build`), publish directory (`frontend/dist`), and an SPA redirect rule (`/* /index.html 200`) so client-side routing doesn't 404 on refresh
+- [x] Railway has a working start command for the backend (uvicorn, reading `PORT` from Railway's injected env var) — via `Procfile`, `railway.toml`, or Railway's own dashboard config, whichever this repo's conventions favor
+  - Implemented via `backend/Procfile`
+- [x] `backend/.env.example` updated to include `SEMANTIC_SCHOLAR_API_KEY` (currently missing)
+  - Was already present; added the new `FRONTEND_URL` var alongside it
+- [x] `docs/reference/environment.md` updated to match reality: add the new `FRONTEND_URL`/CORS var, and either remove the not-yet-implemented `ANTHROPIC_API_KEY`/`AI_ENABLED` entries or clearly mark them as "Phase 3, not yet read by the app"
+- [x] Decide and document the DB schema strategy for this first deploy: either set up Alembic now, or explicitly keep `Base.metadata.create_all()` for this deploy with a follow-up issue filed for real migrations before Phase 3 adds any schema changes — don't silently ship without a documented decision either way
+  - **Decision: keep `Base.metadata.create_all()` for this deploy.** Phase 3 is the first thing that will actually change the schema (new columns/tables for AI summaries), so Alembic is deferred to a follow-up issue filed before that work starts rather than set up speculatively now.
 - [ ] Netlify site created and connected to this repo; Railway service + PostgreSQL instance created and connected
 - [ ] End-to-end smoke test passes on the real deployed URLs: Netlify-hosted frontend successfully calls the Railway-hosted backend (trending page loads real data), confirming CORS and env wiring both work outside of localhost
 
@@ -33,6 +37,6 @@ Deploying now (rather than after Phase 3 is built) means any environment/infra s
 None — independent of Phase 3. Should land before Phase 3 work starts.
 
 ## Definition of Done
-- [ ] Tests written and passing (CORS config change gets a test; no other new logic expected)
-- [ ] Red-green verified
+- [x] Tests written and passing (CORS config change gets a test; no other new logic expected)
+- [x] Red-green verified
 - [ ] Live smoke test on the deployed Netlify + Railway URLs, not just local

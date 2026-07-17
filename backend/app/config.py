@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     semantic_scholar_api_key: str = ""
     app_name: str = "ResearchPulse"
     database_url: str = "postgresql://localhost/researchpulse"
+    frontend_url: str = "http://localhost:5173"
 
     model_config = SettingsConfigDict(env_file=".env")
 
