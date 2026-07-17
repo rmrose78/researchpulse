@@ -4,7 +4,7 @@
 Search PubMed, view article details, save to reading list.
 Not the differentiator — required foundation.
 
-### Phase 2 — Trending (the differentiator, in progress)
+### Phase 2 — Trending (the differentiator, complete)
 Citation velocity algorithm: `velocity = total_citations / (article_age_in_days + 21)`
 Three modes: Trending, Most Cited, New & Notable — all three built.
 Semantic Scholar for citation data. Results cached per specialty/mode/window
@@ -22,9 +22,8 @@ Done:
 - "Why it's trending" line + reading list crossover (citation-stat detail
   qualifier for Trending/Most Cited, standalone sentence for New & Notable;
   live re-fetched citation counts on the Reading List page)
-
-Remaining:
-- Sticky specialty/mode selection across visits
+- Sticky specialty/mode selection across visits (localStorage, URL params
+  take precedence for shareable/bookmarked links)
 
 ### Phase 3 — AI Summarization (accessibility layer)
 Plain-English summaries via Anthropic API.

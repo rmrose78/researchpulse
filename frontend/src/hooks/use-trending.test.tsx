@@ -66,6 +66,7 @@ beforeEach(() => {
   mockedGetTrending.mockResolvedValue(makeResponse())
   mockedGetTrendingAvailability.mockReset()
   mockedGetTrendingAvailability.mockResolvedValue(makeAvailability())
+  window.localStorage.clear()
 })
 
 describe('useTrending', () => {
@@ -276,5 +277,105 @@ describe('useTrending', () => {
 
     // Assert — best-effort only, never blocks or breaks the page
     expect(result.current.disabledSpecialties.size).toBe(0)
+  })
+
+  describe('localStorage persistence', () => {
+    const SPECIALTY_KEY = 'researchpulse.trending.specialty'
+    const MODE_KEY = 'researchpulse.trending.mode'
+
+    it('restores specialty and mode from localStorage when no URL params are present', async () => {
+      // Arrange
+      const storedSpecialty = SPECIALTIES[1].key
+      const storedMode = TRENDING_MODES[1].key
+      window.localStorage.setItem(SPECIALTY_KEY, storedSpecialty)
+      window.localStorage.setItem(MODE_KEY, storedMode)
+
+      // Act
+      const { result } = renderUseTrending()
+      await waitFor(() => expect(result.current.status).toBe('success'))
+
+      // Assert
+      expect(result.current.specialty).toBe(storedSpecialty)
+      expect(result.current.mode).toBe(storedMode)
+      expect(mockedGetTrending).toHaveBeenCalledWith(storedSpecialty, storedMode, DEFAULT_WINDOW_DAYS)
+    })
+
+    it('falls back to defaults when the stored specialty/mode is invalid or stale', async () => {
+      // Arrange
+      window.localStorage.setItem(SPECIALTY_KEY, 'not_a_real_specialty')
+      window.localStorage.setItem(MODE_KEY, 'bogus')
+
+      // Act
+      const { result } = renderUseTrending()
+      await waitFor(() => expect(result.current.status).toBe('success'))
+
+      // Assert
+      expect(result.current.specialty).toBe(DEFAULT_SPECIALTY)
+      expect(result.current.mode).toBe(DEFAULT_MODE)
+    })
+
+    it('prefers URL params over a stored localStorage value', async () => {
+      // Arrange
+      const storedSpecialty = SPECIALTIES[1].key
+      const urlSpecialty = SPECIALTIES[2].key
+      window.localStorage.setItem(SPECIALTY_KEY, storedSpecialty)
+
+      // Act
+      const { result } = renderUseTrending(`/?specialty=${urlSpecialty}`)
+      await waitFor(() => expect(result.current.status).toBe('success'))
+
+      // Assert
+      expect(result.current.specialty).toBe(urlSpecialty)
+    })
+
+    it('persists the new specialty to localStorage when setSpecialty is called', async () => {
+      // Arrange
+      const nextSpecialty = SPECIALTIES[1].key
+      const { result } = renderUseTrending()
+      await waitFor(() => expect(result.current.status).toBe('success'))
+
+      // Act
+      act(() => result.current.setSpecialty(nextSpecialty))
+
+      // Assert
+      expect(window.localStorage.getItem(SPECIALTY_KEY)).toBe(nextSpecialty)
+    })
+
+    it('persists the new mode to localStorage when setMode is called', async () => {
+      // Arrange
+      const nextMode = TRENDING_MODES[1].key
+      const { result } = renderUseTrending()
+      await waitFor(() => expect(result.current.status).toBe('success'))
+
+      // Act
+      act(() => result.current.setMode(nextMode))
+
+      // Assert
+      expect(window.localStorage.getItem(MODE_KEY)).toBe(nextMode)
+    })
+
+    it('does not crash when localStorage throws (e.g. private browsing/quota exceeded)', async () => {
+      // Arrange
+      const getItemSpy = jest
+        .spyOn(Storage.prototype, 'getItem')
+        .mockImplementation(() => {
+          throw new Error('SecurityError')
+        })
+      const setItemSpy = jest
+        .spyOn(Storage.prototype, 'setItem')
+        .mockImplementation(() => {
+          throw new Error('SecurityError')
+        })
+
+      // Act & Assert — falls back to defaults, and setters don't throw
+      const { result } = renderUseTrending()
+      await waitFor(() => expect(result.current.status).toBe('success'))
+      expect(result.current.specialty).toBe(DEFAULT_SPECIALTY)
+      expect(result.current.mode).toBe(DEFAULT_MODE)
+      expect(() => act(() => result.current.setSpecialty(SPECIALTIES[1].key))).not.toThrow()
+
+      getItemSpy.mockRestore()
+      setItemSpy.mockRestore()
+    })
   })
 })

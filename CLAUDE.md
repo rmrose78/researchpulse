@@ -83,10 +83,10 @@ the Fort Meade, Maryland area (Leidos, Booz Allen).
 
 ## Current Priority
 Phase 1 (Core search + reading list) is complete, frontend and backend both.
-Phase 2 (Trending) is nearly done — citation-velocity rankings, all three
+Phase 2 (Trending) is complete — citation-velocity rankings, all three
 ranking modes, the specialty/mode/time-range filter rail, evidence-tier
-badges, rank-movement badges, and the "why it's trending" + reading-list
-citation sync are all built and merged.
+badges, rank-movement badges, the "why it's trending" + reading-list
+citation sync, and sticky specialty/mode selection are all built and merged.
 
 Completed:
 - GET /health ✅
@@ -106,9 +106,11 @@ Completed:
   Cited fold the detail into the citation-stat line; New & Notable keeps
   a standalone sentence; both handle the age_days === 0 edge case with
   "so far" / "published this month" wording)
+- Sticky specialty/mode selection ✅ (persisted to `localStorage`,
+  restored on load, URL params take precedence for shareable/bookmarked
+  links)
 
-Only open issue in `docs/issues/trending/`: #16 Sticky Specialty/Mode
-Selection.
+No open issues in `docs/issues/trending/` — Phase 2 is complete.
 
 ---
 

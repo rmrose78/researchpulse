@@ -7,7 +7,7 @@ export interface Specialty {
 
 export const SPECIALTIES: Specialty[] = [
   { key: 'cardiology', label: 'Cardiology' },
-  { key: 'oncology', label: 'Oncology / Cancer' },
+  { key: 'oncology', label: 'Oncology' },
   { key: 'infectious_disease', label: 'Infectious Disease' },
   { key: 'neurology', label: 'Neurology' },
   { key: 'alzheimers_dementia', label: "Alzheimer's & Dementia" },

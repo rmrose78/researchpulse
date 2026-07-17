@@ -26,19 +26,52 @@ const VALID_SPECIALTIES = new Set(SPECIALTIES.map((s) => s.key))
 const VALID_MODES = new Set(TRENDING_MODES.map((m) => m.key))
 const VALID_WINDOW_DAYS = new Set(TIME_RANGES.map((r) => r.days))
 
+const STORAGE_KEY_SPECIALTY = 'researchpulse.trending.specialty'
+const STORAGE_KEY_MODE = 'researchpulse.trending.mode'
+
+function readStoredValue(key: string): string | null {
+  try {
+    return window.localStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+function writeStoredValue(key: string, value: string): void {
+  try {
+    window.localStorage.setItem(key, value)
+  } catch {
+    // best-effort — private browsing / quota exceeded, no crash
+  }
+}
+
 export function useTrending(): UseTrendingResult {
   // URL is the source of truth for specialty/mode/window — makes the current
   // combination bookmarkable/shareable, and survives a page reload. Each
   // value is validated against its known list on every read, falling back to
   // its default for a missing or stale/invalid stored value (e.g. from a
-  // hand-edited URL or an older app version).
+  // hand-edited URL or an older app version). When the URL has no explicit
+  // value, fall back to the last value the user picked (persisted in
+  // localStorage) before falling back to the hardcoded default.
   const [searchParams, setSearchParams] = useSearchParams()
 
   const specialtyParam = searchParams.get('specialty')
-  const specialty = specialtyParam && VALID_SPECIALTIES.has(specialtyParam) ? specialtyParam : DEFAULT_SPECIALTY
+  const storedSpecialty = readStoredValue(STORAGE_KEY_SPECIALTY)
+  const specialty =
+    specialtyParam && VALID_SPECIALTIES.has(specialtyParam)
+      ? specialtyParam
+      : storedSpecialty && VALID_SPECIALTIES.has(storedSpecialty)
+        ? storedSpecialty
+        : DEFAULT_SPECIALTY
 
   const modeParam = searchParams.get('mode')
-  const mode = modeParam && VALID_MODES.has(modeParam) ? modeParam : DEFAULT_MODE
+  const storedMode = readStoredValue(STORAGE_KEY_MODE)
+  const mode =
+    modeParam && VALID_MODES.has(modeParam)
+      ? modeParam
+      : storedMode && VALID_MODES.has(storedMode)
+        ? storedMode
+        : DEFAULT_MODE
 
   const windowDaysParam = Number(searchParams.get('window_days'))
   const windowDays = VALID_WINDOW_DAYS.has(windowDaysParam) ? windowDaysParam : DEFAULT_WINDOW_DAYS
@@ -100,6 +133,7 @@ export function useTrending(): UseTrendingResult {
 
   const setSpecialty = useCallback(
     (next: string) => {
+      writeStoredValue(STORAGE_KEY_SPECIALTY, next)
       setSearchParams((prev) => {
         const params = new URLSearchParams(prev)
         params.set('specialty', next)
@@ -113,6 +147,7 @@ export function useTrending(): UseTrendingResult {
 
   const setMode = useCallback(
     (next: string) => {
+      writeStoredValue(STORAGE_KEY_MODE, next)
       setSearchParams((prev) => {
         const params = new URLSearchParams(prev)
         params.set('mode', next)
