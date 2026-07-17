@@ -9,7 +9,7 @@ import VelocityExplainer from '@/components/sections/velocity-explainer/velocity
 import NotabilityExplainer from '@/components/sections/notability-explainer/notability-explainer'
 import { useTrending } from '@/hooks/use-trending'
 import { formatRelativeTime } from '@/utils/format'
-import type { CitationStat } from '@/types'
+import type { CitationStat, RankMovement } from '@/types'
 import styles from './trending-page.module.scss'
 
 export default function TrendingPage() {
@@ -53,6 +53,16 @@ export default function TrendingPage() {
     return map
   }, [trendingArticles, mode])
 
+  const rankMovements = useMemo(() => {
+    const map: Record<string, RankMovement> = {}
+    for (const article of trendingArticles) {
+      if (article.is_new || (article.rank_delta !== null && article.rank_delta !== 0)) {
+        map[article.pmid] = { delta: article.rank_delta, isNew: article.is_new }
+      }
+    }
+    return map
+  }, [trendingArticles])
+
   return (
     <Hero>
       <section className={styles.trendingLayout} aria-label="Trending">
@@ -85,6 +95,7 @@ export default function TrendingPage() {
                 articles={trendingArticles}
                 citationStats={citationStats}
                 notableTypes={notableTypes}
+                rankMovements={rankMovements}
               />
             )}
             {trendingStatus === 'error' && <ErrorState onRetry={retryTrending} />}

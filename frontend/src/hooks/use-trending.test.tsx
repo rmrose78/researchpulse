@@ -30,6 +30,8 @@ function makeArticle(overrides: Partial<TrendingArticle> = {}): TrendingArticle 
     citation_count: 12,
     velocity: 0.6,
     notable_type: null,
+    rank_delta: null,
+    is_new: false,
     ...overrides,
   }
 }

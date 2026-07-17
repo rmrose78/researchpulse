@@ -40,7 +40,7 @@ async def get_trending(
         mode=snapshot.mode,
         window_days=snapshot.window_days,
         computed_at=snapshot.computed_at,
-        results=snapshot.payload,
+        results=trending_service.attach_rank_movements(db, snapshot),
     )
 
 

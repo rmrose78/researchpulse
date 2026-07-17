@@ -7,6 +7,8 @@ class TrendingArticle(ArticleSearchResult):
     citation_count: int
     velocity: float
     notable_type: str | None = None
+    rank_delta: int | None = None
+    is_new: bool = False
 
 
 class TrendingResponse(BaseModel):

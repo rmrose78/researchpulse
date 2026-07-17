@@ -113,10 +113,41 @@
   color: $gray-600;
 }
 
+.statsRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .citationStat {
   font-family: $font-mono;
   font-size: 0.8rem;
   color: $clinical-blue;
+}
+
+.rankBadge {
+  font-family: $font-mono;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  border-radius: 6px;
+  padding: 0.15rem 0.5rem;
+}
+
+.rankUp {
+  color: $success;
+  background: rgba(5, 150, 105, 0.08);
+}
+
+.rankDown {
+  color: $error;
+  background: rgba(220, 38, 38, 0.08);
+}
+
+.rankNew {
+  color: $clinical-blue;
+  background: rgba(41, 115, 193, 0.08);
 }
 
 .toggle {

@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from fastapi.testclient import TestClient
 from app.main import app
 from app.database import sessionLocal
@@ -101,6 +102,84 @@ def test_get_trending_availability_reflects_cached_state_without_network_calls()
         assert response.status_code == 200
         assert data["window_days"] == 365
         assert data["available"]["cardiology"] is False
+    _delete_snapshots("cardiology")
+
+
+def _payload_article(pmid: str) -> dict:
+    return {
+        "pmid": pmid,
+        "title": f"Article {pmid}",
+        "abstract": None,
+        "authors": [],
+        "journal": None,
+        "pub_date": "2024/Jan",
+        "doi": None,
+        "publication_types": [],
+        "citation_count": 0,
+        "velocity": 0.0,
+        "notable_type": None,
+    }
+
+
+def test_get_trending_includes_rank_delta_when_a_previous_snapshot_exists():
+    # Arrange — two cached snapshots, no network calls needed
+    _delete_snapshots("cardiology")
+    db = sessionLocal()
+    db.add(
+        TrendingSnapshot(
+            specialty="cardiology", mode="trending", window_days=365,
+            computed_at=datetime.now(timezone.utc) - timedelta(hours=1),
+            payload=[_payload_article("1"), _payload_article("2")],
+        )
+    )
+    db.commit()
+    db.add(
+        TrendingSnapshot(
+            specialty="cardiology", mode="trending", window_days=365,
+            computed_at=datetime.now(timezone.utc),
+            payload=[_payload_article("2"), _payload_article("1")],
+        )
+    )
+    db.commit()
+    db.close()
+
+    with TestClient(app) as client:
+        # Act
+        response = client.get(
+            "/api/trending/", params={"specialty": "cardiology", "window_days": 365}
+        )
+        data = response.json()
+
+        # Assert — "2" moved from index 1 to index 0 -> up 1
+        moved = next(a for a in data["results"] if a["pmid"] == "2")
+        assert moved["rank_delta"] == 1
+        assert moved["is_new"] is False
+    _delete_snapshots("cardiology")
+
+
+def test_get_trending_shows_no_badges_on_first_ever_snapshot():
+    # Arrange — exactly one cached snapshot, nothing to diff against
+    _delete_snapshots("cardiology")
+    db = sessionLocal()
+    db.add(
+        TrendingSnapshot(
+            specialty="cardiology", mode="trending", window_days=365,
+            payload=[_payload_article("1")],
+        )
+    )
+    db.commit()
+    db.close()
+
+    with TestClient(app) as client:
+        # Act
+        response = client.get(
+            "/api/trending/", params={"specialty": "cardiology", "window_days": 365}
+        )
+        data = response.json()
+
+        # Assert
+        assert data["results"][0]["rank_delta"] is None
+        assert data["results"][0]["is_new"] is False
     _delete_snapshots("cardiology")
 
 
