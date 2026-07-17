@@ -3,6 +3,7 @@ import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import search, reading_list, trending
+from app.config import settings
 from app.database import engine, Base
 import app.models.reading_list
 import app.models.trending
@@ -27,7 +28,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Trust requests from our React app
+    allow_origins=[settings.frontend_url],  # Trust requests from our deployed frontend
     allow_credentials=True,
     allow_methods=["*"],                      # Allow GET, POST, PUT, DELETE etc
     allow_headers=["*"],                      # Allow any headers
