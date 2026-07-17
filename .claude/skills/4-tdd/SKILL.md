@@ -10,8 +10,12 @@ issue until the current one is visually verified and all tests green.
 
 ## Before Starting
 1. Read the issue file from `docs/issues/<feature-name>/`
-2. If frontend work is involved — read `fe-standards.md` in this directory
-3. If committing — run through `pre-commit.md` in this directory
+2. Confirm the current branch is specific to this issue (e.g.
+   `<issue-number>-<slug>`) — if on `main`, or on a branch for a
+   different issue, create/switch to the correct branch before writing
+   any code. Never implement an issue directly on `main`
+3. If frontend work is involved — read `fe-standards.md` in this directory
+4. If committing — run through `pre-commit.md` in this directory
 
 ## Rules
 - ONE issue per session

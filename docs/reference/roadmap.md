@@ -17,10 +17,13 @@ Done:
 - Most Cited and New & Notable modes
 - PubMed-style left filter rail (Mode / Specialty / Time Range)
 - Mobile hamburger nav
+- New & Notable evidence-tier badge
+- Rank-movement badges
+- "Why it's trending" line + reading list crossover (citation-stat detail
+  qualifier for Trending/Most Cited, standalone sentence for New & Notable;
+  live re-fetched citation counts on the Reading List page)
 
 Remaining:
-- Rank-movement badges
-- "Why it's trending" line + reading list crossover
 - Sticky specialty/mode selection across visits
 
 ### Phase 3 — AI Summarization (accessibility layer)

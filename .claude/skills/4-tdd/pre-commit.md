@@ -17,6 +17,13 @@ Run through every item before committing. Do not commit if any item fails.
 - [ ] No console errors or warnings (from the console messages captured
       during visual-verification.md)
 - [ ] .env not staged — run `git status` and confirm
+- [ ] `CLAUDE.md`, `docs/reference/*.md`, and `README.md` reflect this
+      issue's outcome — update "Current Priority" (CLAUDE.md), the
+      endpoint list (`docs/reference/api-endpoints.md` + README), and the
+      feature/roadmap list (`docs/reference/roadmap.md` + README) if this
+      issue added, changed, or closed out anything they currently
+      describe. Skip if nothing in those docs is now stale — don't edit
+      just to edit
 
 ## Backend Only
 - [ ] New endpoints have tests

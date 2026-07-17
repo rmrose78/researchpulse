@@ -83,8 +83,10 @@ the Fort Meade, Maryland area (Leidos, Booz Allen).
 
 ## Current Priority
 Phase 1 (Core search + reading list) is complete, frontend and backend both.
-Phase 2 (Trending) is in progress — citation-velocity rankings, all three
-ranking modes, and the specialty/mode/time-range filter rail are built.
+Phase 2 (Trending) is nearly done — citation-velocity rankings, all three
+ranking modes, the specialty/mode/time-range filter rail, evidence-tier
+badges, rank-movement badges, and the "why it's trending" + reading-list
+citation sync are all built and merged.
 
 Completed:
 - GET /health ✅
@@ -93,17 +95,19 @@ Completed:
 - POST /api/reading-list/ ✅
 - GET /api/reading-list/ ✅
 - DELETE /api/reading-list/{pmid} ✅
+- GET /api/reading-list/citations ✅ (live citation counts, best-effort)
 - GET /api/trending/ (modes: trending, most_cited, new_notable) ✅
 - GET /api/trending/availability ✅
 - Trending page: PubMed-style left filter rail (Mode / Specialty / Time
   Range), mobile hamburger nav ✅
+- New & Notable evidence-tier badge ✅
+- Rank-movement badges (↑/↓/NEW) ✅
+- "Why it's trending" line + reading list crossover ✅ (Trending/Most
+  Cited fold the detail into the citation-stat line; New & Notable keeps
+  a standalone sentence; both handle the age_days === 0 edge case with
+  "so far" / "published this month" wording)
 
-Issue #13 (Most Cited / New & Notable modes) is built and passing all
-tests/visual verification but not yet committed or closed — check with the
-developer before assuming it's merged.
-
-Next open issues (see `docs/issues/trending/`): #14 Rank-Movement Badges,
-#15 "Why It's Trending" + Reading List Crossover, #16 Sticky Specialty/Mode
+Only open issue in `docs/issues/trending/`: #16 Sticky Specialty/Mode
 Selection.
 
 ---

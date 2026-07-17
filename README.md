@@ -11,7 +11,7 @@ plain English for clinicians, health IT analysts, and policy professionals
 who need to act on research, not just find it.
 
 ## Status
-**Active development** — Phase 1 (Core) complete, Phase 2 (Trending) in progress
+**Active development** — Phase 1 (Core) complete, Phase 2 (Trending) nearly complete
 
 ## Tech Stack
 - **Frontend:** React 19 + TypeScript + Vite 8, React Router 7, Radix UI, Framer Motion
@@ -27,16 +27,21 @@ who need to act on research, not just find it.
 - View full article details including MeSH terms and keywords
 - Save articles to a personal reading list
 
-### Phase 2 — Trending (in progress)
+### Phase 2 — Trending (nearly complete)
 - Citation velocity algorithm to surface trending research
 - Three modes, all built: Trending, Most Cited, New & Notable
 - Left filter rail for Mode / Specialty / Time Range, with a
   mobile hamburger nav
+- Evidence-tier badges (New & Notable) and rank-movement badges (↑/↓/NEW)
+- "Why it's trending" plain-English signal on every card — folded into
+  the citation-stat line for Trending/Most Cited, a standalone sentence
+  for New & Notable
+- Reading list shows live re-fetched citation counts, not a stale
+  save-time snapshot
 - Powered by Semantic Scholar API
 - Results cached per specialty/mode/time-window on the backend to minimize
   API calls
-- Remaining: rank-movement badges, "why it's trending" + reading list
-  crossover, sticky specialty/mode selection across visits
+- Remaining: sticky specialty/mode selection across visits
 
 ### Phase 3 — AI Summarization (planned)
 - Plain-English summaries of article abstracts
@@ -82,6 +87,7 @@ GET    /api/reading-list/         — get saved articles
 DELETE /api/reading-list/{pmid}   — remove saved article
 GET    /api/trending/             — trending articles by specialty/mode/window
 GET    /api/trending/availability — cache availability for a given filter combo
+GET    /api/reading-list/citations — live citation counts for saved articles
 
 ## Running Locally
 
