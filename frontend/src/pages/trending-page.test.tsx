@@ -5,7 +5,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { axe } from 'jest-axe'
 import TrendingPage from './trending-page'
 import ReadingListProvider from '@/components/providers/reading-list-provider'
-import { getSavedArticles, getTrending, getTrendingAvailability } from '@/utils/api'
+import { getSavedArticles, getTrending, getTrendingAvailability, saveArticle } from '@/utils/api'
 import { DEFAULT_SPECIALTY } from '@/utils/specialties'
 import { DEFAULT_WINDOW_DAYS } from '@/utils/time-ranges'
 import { DEFAULT_MODE } from '@/utils/trending-modes'
@@ -21,6 +21,7 @@ jest.mock('@/utils/api', () => ({
 }))
 
 const mockedGetSavedArticles = jest.mocked(getSavedArticles)
+const mockedSaveArticle = jest.mocked(saveArticle)
 const mockedGetTrending = jest.mocked(getTrending)
 const mockedGetTrendingAvailability = jest.mocked(getTrendingAvailability)
 
@@ -52,6 +53,8 @@ async function renderPage() {
 beforeEach(() => {
   mockedGetSavedArticles.mockReset()
   mockedGetSavedArticles.mockResolvedValue([])
+  mockedSaveArticle.mockReset()
+  mockedSaveArticle.mockResolvedValue(null)
   mockedGetTrending.mockReset()
   mockedGetTrending.mockResolvedValue(makeTrendingResponse())
   mockedGetTrendingAvailability.mockReset()
@@ -101,6 +104,7 @@ describe('TrendingPage', () => {
             notable_type: null,
             rank_delta: null,
             is_new: false,
+            age_days: 30,
           },
         ],
       })
@@ -111,7 +115,7 @@ describe('TrendingPage', () => {
 
     // Assert
     expect(await screen.findByRole('heading', { name: /a trending cardiac study/i })).toBeInTheDocument()
-    expect(screen.getByText('14 citations · velocity 0.80')).toBeInTheDocument()
+    expect(screen.getByText('14 citations in its first 30 days · velocity 0.80')).toBeInTheDocument()
     expect(screen.getByText(/updated .* · via semantic scholar/i)).toBeInTheDocument()
   })
 
@@ -224,6 +228,7 @@ describe('TrendingPage', () => {
       notable_type: null,
       rank_delta: null,
       is_new: false,
+      age_days: 30,
     }
     mockedGetTrending.mockResolvedValue(makeTrendingResponse({ results: [article] }))
     await renderPage()
@@ -237,7 +242,7 @@ describe('TrendingPage', () => {
     await screen.findByRole('heading', { name: /a most-cited study/i })
 
     // Assert
-    await waitFor(() => expect(screen.getByText('50 citations')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('50 citations overall')).toBeInTheDocument())
     expect(screen.queryByText(/velocity/i)).not.toBeInTheDocument()
   })
 
@@ -257,6 +262,7 @@ describe('TrendingPage', () => {
       notable_type: null,
       rank_delta: null,
       is_new: false,
+      age_days: 30,
     }
     const alreadyCited = {
       pmid: '222',
@@ -272,6 +278,7 @@ describe('TrendingPage', () => {
       notable_type: null,
       rank_delta: null,
       is_new: false,
+      age_days: 30,
     }
     mockedGetTrending.mockResolvedValue(
       makeTrendingResponse({ mode: 'new_notable', results: [brandNew, alreadyCited] })
@@ -319,6 +326,7 @@ describe('TrendingPage', () => {
       notable_type: 'Randomized Controlled Trial',
       rank_delta: null,
       is_new: false,
+      age_days: 30,
     }
     const plain = {
       pmid: '222',
@@ -334,6 +342,7 @@ describe('TrendingPage', () => {
       notable_type: null,
       rank_delta: null,
       is_new: false,
+      age_days: 30,
     }
     mockedGetTrending.mockResolvedValue(
       makeTrendingResponse({ mode: 'new_notable', results: [rct, plain] })
@@ -365,6 +374,7 @@ describe('TrendingPage', () => {
       notable_type: null,
       rank_delta: null,
       is_new: false,
+      age_days: 30,
     }
     mockedGetTrending.mockResolvedValue(makeTrendingResponse({ results: [rct] }))
 
@@ -392,6 +402,7 @@ describe('TrendingPage', () => {
       notable_type: null,
       rank_delta: null,
       is_new: true,
+      age_days: 30,
     }
     mockedGetTrending.mockResolvedValue(makeTrendingResponse({ results: [article] }))
 
@@ -419,6 +430,7 @@ describe('TrendingPage', () => {
       notable_type: null,
       rank_delta: 3,
       is_new: false,
+      age_days: 30,
     }
     mockedGetTrending.mockResolvedValue(
       makeTrendingResponse({ mode: 'most_cited', results: [article] })
@@ -432,6 +444,97 @@ describe('TrendingPage', () => {
 
     // Assert
     expect(screen.getByText('↑3')).toBeInTheDocument()
+  })
+
+  it('folds the article age into the citation-stat line in Trending mode, not a separate sentence', async () => {
+    // Arrange
+    const article = {
+      pmid: '333',
+      title: 'A well-explained article',
+      abstract: null,
+      authors: [],
+      journal: null,
+      pub_date: '2026/Apr',
+      doi: null,
+      publication_types: [],
+      citation_count: 41,
+      velocity: 0.2,
+      notable_type: null,
+      rank_delta: null,
+      is_new: false,
+      age_days: 90,
+    }
+    mockedGetTrending.mockResolvedValue(makeTrendingResponse({ results: [article] }))
+
+    // Act
+    await renderPage()
+
+    // Assert
+    expect(await screen.findByRole('heading', { name: /a well-explained article/i })).toBeInTheDocument()
+    expect(screen.getByText('41 citations in its first 90 days · velocity 0.20')).toBeInTheDocument()
+  })
+
+  it('folds the "overall" qualifier into the citation-stat line in Most Cited mode', async () => {
+    // Arrange
+    const article = {
+      pmid: '334',
+      title: 'A most-cited well-explained article',
+      abstract: null,
+      authors: [],
+      journal: null,
+      pub_date: '2026/Apr',
+      doi: null,
+      publication_types: [],
+      citation_count: 41,
+      velocity: 0.2,
+      notable_type: null,
+      rank_delta: null,
+      is_new: false,
+      age_days: 90,
+    }
+    mockedGetTrending.mockResolvedValue(
+      makeTrendingResponse({ mode: 'most_cited', results: [article] })
+    )
+    await renderPage()
+    await screen.findByRole('heading', { name: /most-cited well-explained article/i })
+
+    // Act
+    await userEvent.click(screen.getByRole('radio', { name: /most cited/i }))
+
+    // Assert
+    expect(await screen.findByText('41 citations overall')).toBeInTheDocument()
+  })
+
+  it('lets the user save a trending card to the reading list', async () => {
+    // Arrange
+    const article = {
+      pmid: '444',
+      title: 'A savable article',
+      abstract: null,
+      authors: [],
+      journal: null,
+      pub_date: '2026/Apr',
+      doi: null,
+      publication_types: [],
+      citation_count: 5,
+      velocity: 0.2,
+      notable_type: null,
+      rank_delta: null,
+      is_new: false,
+      age_days: 10,
+    }
+    mockedGetTrending.mockResolvedValue(makeTrendingResponse({ results: [article] }))
+    await renderPage()
+    await screen.findByRole('heading', { name: /a savable article/i })
+
+    // Act
+    await userEvent.click(screen.getByRole('button', { name: /save to reading list/i }))
+
+    // Assert
+    expect(screen.getByRole('button', { name: /remove from reading list/i })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    )
   })
 
   it('disables a specialty pill already known to have no results at the current range', async () => {

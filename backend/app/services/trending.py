@@ -183,6 +183,7 @@ def rank_articles(
                 citation_count=count,
                 velocity=compute_velocity(count, days),
                 notable_type=notable_type,
+                age_days=days,
             )
         )
     if mode == "most_cited":

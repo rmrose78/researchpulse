@@ -35,6 +35,7 @@ export interface SavedArticle {
 export interface CitationStat {
   count: number
   velocity?: number
+  detail?: string
 }
 
 export interface TrendingArticle extends ArticleSearchResult {
@@ -43,6 +44,7 @@ export interface TrendingArticle extends ArticleSearchResult {
   notable_type: string | null
   rank_delta: number | null
   is_new: boolean
+  age_days: number
 }
 
 export interface RankMovement {

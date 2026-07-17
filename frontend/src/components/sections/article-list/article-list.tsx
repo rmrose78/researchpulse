@@ -8,6 +8,7 @@ interface ArticleListProps {
   citationStats?: Record<string, CitationStat>
   notableTypes?: Record<string, string>
   rankMovements?: Record<string, RankMovement>
+  whyTrending?: Record<string, string>
 }
 
 export default function ArticleList({
@@ -15,6 +16,7 @@ export default function ArticleList({
   citationStats,
   notableTypes,
   rankMovements,
+  whyTrending,
 }: ArticleListProps) {
   const { isSaved, toggleSave } = useReadingList()
 
@@ -29,6 +31,7 @@ export default function ArticleList({
             citationStat={citationStats?.[article.pmid]}
             notableType={notableTypes?.[article.pmid]}
             rankMovement={rankMovements?.[article.pmid]}
+            whyTrending={whyTrending?.[article.pmid]}
           />
         </li>
       ))}

@@ -12,6 +12,7 @@ interface ArticleCardProps {
   citationStat?: CitationStat
   notableType?: string
   rankMovement?: RankMovement
+  whyTrending?: string
 }
 
 const ANIMATION_TRANSITION = { type: 'tween', duration: 0.2, ease: 'easeInOut' } as const
@@ -28,6 +29,7 @@ export default function ArticleCard({
   citationStat,
   notableType,
   rankMovement,
+  whyTrending,
 }: ArticleCardProps) {
   const [expanded, setExpanded] = useState(false)
   const abstractId = useId()
@@ -83,11 +85,13 @@ export default function ArticleCard({
         </>
       )}
       <p className={styles.metadata}>{metadata}</p>
+      {whyTrending && <p className={styles.whyTrending}>{whyTrending}</p>}
       {(citationStat || rankMovement) && (
         <div className={styles.statsRow}>
           {citationStat && (
             <p className={styles.citationStat}>
               {citationStat.count} {citationStat.count === 1 ? 'citation' : 'citations'}
+              {citationStat.detail && <> {citationStat.detail}</>}
               {citationStat.velocity !== undefined && <> · velocity {citationStat.velocity.toFixed(2)}</>}
             </p>
           )}

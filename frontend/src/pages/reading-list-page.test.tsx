@@ -4,16 +4,18 @@ import userEvent from '@testing-library/user-event'
 import { axe } from 'jest-axe'
 import ReadingListPage from './reading-list-page'
 import ReadingListProvider from '@/components/providers/reading-list-provider'
-import { getSavedArticles } from '@/utils/api'
+import { getReadingListCitations, getSavedArticles } from '@/utils/api'
 import type { SavedArticle } from '@/types'
 
 jest.mock('@/utils/api', () => ({
   getSavedArticles: jest.fn(),
   saveArticle: jest.fn(),
   removeSavedArticle: jest.fn(),
+  getReadingListCitations: jest.fn(),
 }))
 
 const mockedGetSavedArticles = jest.mocked(getSavedArticles)
+const mockedGetReadingListCitations = jest.mocked(getReadingListCitations)
 
 function makeSaved(overrides: Partial<SavedArticle> = {}): SavedArticle {
   return {
@@ -41,6 +43,8 @@ async function renderPage() {
 
 beforeEach(() => {
   mockedGetSavedArticles.mockReset()
+  mockedGetReadingListCitations.mockReset()
+  mockedGetReadingListCitations.mockResolvedValue({})
 })
 
 describe('ReadingListPage', () => {
@@ -98,6 +102,57 @@ describe('ReadingListPage', () => {
 
     // Assert
     await waitFor(() => expect(screen.getByRole('heading', { name: /a cardiac study/i })).toBeInTheDocument())
+  })
+
+  it('shows live citation counts fetched via one batch call', async () => {
+    // Arrange
+    mockedGetSavedArticles.mockResolvedValue([makeSaved({ pmid: '1' })])
+    mockedGetReadingListCitations.mockResolvedValue({ '1': 14 })
+
+    // Act
+    await renderPage()
+
+    // Assert
+    expect(await screen.findByText('14 citations')).toBeInTheDocument()
+    expect(mockedGetReadingListCitations).toHaveBeenCalledTimes(1)
+  })
+
+  it('omits the citation count for an article Semantic Scholar has no data for', async () => {
+    // Arrange
+    mockedGetSavedArticles.mockResolvedValue([makeSaved({ pmid: '1' })])
+    mockedGetReadingListCitations.mockResolvedValue({})
+
+    // Act
+    await renderPage()
+
+    // Assert
+    await screen.findByRole('heading', { name: /a cardiac study/i })
+    expect(screen.queryByText(/citation/i)).not.toBeInTheDocument()
+  })
+
+  it('never shows velocity on the reading list page', async () => {
+    // Arrange
+    mockedGetSavedArticles.mockResolvedValue([makeSaved({ pmid: '1' })])
+    mockedGetReadingListCitations.mockResolvedValue({ '1': 14 })
+
+    // Act
+    await renderPage()
+
+    // Assert
+    expect(await screen.findByText('14 citations')).toBeInTheDocument()
+    expect(screen.queryByText(/velocity/i)).not.toBeInTheDocument()
+  })
+
+  it('does not let a failed citations fetch block the reading list from rendering', async () => {
+    // Arrange
+    mockedGetSavedArticles.mockResolvedValue([makeSaved({ pmid: '1' })])
+    mockedGetReadingListCitations.mockRejectedValue(new Error('API error: 502'))
+
+    // Act
+    await renderPage()
+
+    // Assert
+    expect(await screen.findByRole('heading', { name: /a cardiac study/i })).toBeInTheDocument()
   })
 
   it('has no automatically detectable accessibility violations when populated', async () => {
