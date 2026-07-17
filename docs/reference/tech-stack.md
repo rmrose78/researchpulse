@@ -24,5 +24,5 @@
 - Anthropic API — AI summarization (Phase 3)
 
 ### Hosting
-- Netlify — frontend
-- Railway — backend + PostgreSQL
+- Netlify — frontend (live)
+- Railway — backend + PostgreSQL (live)

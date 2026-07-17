@@ -88,6 +88,13 @@ ranking modes, the specialty/mode/time-range filter rail, evidence-tier
 badges, rank-movement badges, the "why it's trending" + reading-list
 citation sync, and sticky specialty/mode selection are all built and merged.
 
+The app is now deployed and live: frontend on Netlify, backend + PostgreSQL
+on Railway. Deploy readiness (issue #26) is closed — see
+`docs/issues/deployment/0-netlify-railway-deploy-readiness.md` for what
+shipped, including DB-connection retry/resilience found necessary during
+the live deploy itself. Follow-up: real Alembic migrations before Phase 3
+touches the schema (issue #27, still open).
+
 Completed:
 - GET /health ✅
 - GET /api/search/ ✅
