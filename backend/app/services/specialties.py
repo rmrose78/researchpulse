@@ -22,7 +22,7 @@ SPECIALTY_KEYWORDS: dict[str, list[str]] = {
 
 SPECIALTY_LABELS: dict[str, str] = {
     "cardiology": "Cardiology",
-    "oncology": "Oncology / Cancer",
+    "oncology": "Oncology",
     "infectious_disease": "Infectious Disease",
     "neurology": "Neurology",
     "alzheimers_dementia": "Alzheimer's & Dementia",

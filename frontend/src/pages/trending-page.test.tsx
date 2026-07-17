@@ -64,6 +64,7 @@ beforeEach(() => {
     available: {},
   })
   sessionStorage.clear()
+  localStorage.clear()
 })
 
 describe('TrendingPage', () => {
