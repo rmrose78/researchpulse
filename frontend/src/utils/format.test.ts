@@ -98,6 +98,14 @@ describe('citationDetail', () => {
     // Act & Assert
     expect(citationDetail(article, 'new_notable')).toBeUndefined()
   })
+
+  it('describes trending mode as "so far" when age_days is 0', () => {
+    // Arrange
+    const article = makeArticle({ age_days: 0 })
+
+    // Act & Assert
+    expect(citationDetail(article, 'trending')).toBe('so far')
+  })
 })
 
 describe('whyTrendingSentence', () => {
@@ -125,5 +133,21 @@ describe('whyTrendingSentence', () => {
 
     // Act & Assert
     expect(whyTrendingSentence(article)).toBe('Published 1 day ago')
+  })
+
+  it('describes new_notable mode as "published this month" when age_days is 0 and untiered', () => {
+    // Arrange
+    const article = makeArticle({ notable_type: null, age_days: 0 })
+
+    // Act & Assert
+    expect(whyTrendingSentence(article)).toBe('Published this month')
+  })
+
+  it('describes new_notable mode as "published this month" when age_days is 0 and tiered', () => {
+    // Arrange
+    const article = makeArticle({ notable_type: 'Systematic Review', age_days: 0 })
+
+    // Act & Assert
+    expect(whyTrendingSentence(article)).toBe('Systematic Review · published this month')
   })
 })
