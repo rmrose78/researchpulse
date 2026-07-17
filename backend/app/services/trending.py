@@ -108,6 +108,44 @@ def _notability(publication_types: list[str]) -> tuple[int, str] | None:
     return min(matches, key=lambda match: match[0])
 
 
+def _previous_snapshot(
+    db: Session, specialty: str, window_days: int, mode: str, before: datetime
+) -> TrendingSnapshot | None:
+    return (
+        db.query(TrendingSnapshot)
+        .filter(
+            TrendingSnapshot.specialty == specialty,
+            TrendingSnapshot.mode == mode,
+            TrendingSnapshot.window_days == window_days,
+            TrendingSnapshot.computed_at < before,
+        )
+        .order_by(TrendingSnapshot.computed_at.desc())
+        .first()
+    )
+
+
+def _rank_movements(
+    current_payload: list[dict], previous_payload: list[dict] | None
+) -> dict[str, tuple[int | None, bool]]:
+    """pmid -> (delta, is_new). An entry is only present when there's
+    something to show — unchanged rank and 'no previous snapshot at all'
+    both mean 'not in this dict', so callers default missing keys to
+    (None, False) rather than treating absence as an error."""
+    if previous_payload is None:
+        return {}
+    previous_ranks = {article["pmid"]: i for i, article in enumerate(previous_payload)}
+    movements: dict[str, tuple[int | None, bool]] = {}
+    for i, article in enumerate(current_payload):
+        pmid = article["pmid"]
+        if pmid not in previous_ranks:
+            movements[pmid] = (None, True)
+        else:
+            delta = previous_ranks[pmid] - i
+            if delta != 0:
+                movements[pmid] = (delta, False)
+    return movements
+
+
 def _build_query(specialty: str, mode: str) -> str:
     mesh_query = SPECIALTY_QUERIES[specialty]
     if mode != "new_notable":
@@ -341,6 +379,22 @@ async def get_trending(
         asyncio.create_task(_background_refresh(specialty, window_days, client, mode))
 
     return latest
+
+
+def attach_rank_movements(db: Session, snapshot: TrendingSnapshot) -> list[TrendingArticle]:
+    """Diffs `snapshot` against the next-most-recent snapshot for the same
+    (specialty, mode, window_days) key, computed fresh on every call since
+    'the two most recent snapshots' shifts as new rows get written — the
+    stored payload itself is never mutated with this data."""
+    previous = _previous_snapshot(
+        db, snapshot.specialty, snapshot.window_days, snapshot.mode, snapshot.computed_at
+    )
+    movements = _rank_movements(snapshot.payload, previous.payload if previous else None)
+    results = []
+    for article_dict in snapshot.payload:
+        delta, is_new = movements.get(article_dict["pmid"], (None, False))
+        results.append(TrendingArticle(**{**article_dict, "rank_delta": delta, "is_new": is_new}))
+    return results
 
 
 def list_cached_availability(

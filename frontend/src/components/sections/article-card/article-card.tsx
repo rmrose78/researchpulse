@@ -1,7 +1,7 @@
 import { useId, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { Bookmark, BookmarkCheck, ChevronDown } from 'lucide-react'
-import type { ArticleSearchResult, CitationStat } from '@/types'
+import type { ArticleSearchResult, CitationStat, RankMovement } from '@/types'
 import { formatAuthors } from '@/utils/format'
 import styles from './article-card.module.scss'
 
@@ -11,6 +11,7 @@ interface ArticleCardProps {
   onSaveToggle: (article: ArticleSearchResult) => void
   citationStat?: CitationStat
   notableType?: string
+  rankMovement?: RankMovement
 }
 
 const ANIMATION_TRANSITION = { type: 'tween', duration: 0.2, ease: 'easeInOut' } as const
@@ -26,6 +27,7 @@ export default function ArticleCard({
   onSaveToggle,
   citationStat,
   notableType,
+  rankMovement,
 }: ArticleCardProps) {
   const [expanded, setExpanded] = useState(false)
   const abstractId = useId()
@@ -81,11 +83,25 @@ export default function ArticleCard({
         </>
       )}
       <p className={styles.metadata}>{metadata}</p>
-      {citationStat && (
-        <p className={styles.citationStat}>
-          {citationStat.count} {citationStat.count === 1 ? 'citation' : 'citations'}
-          {citationStat.velocity !== undefined && <> · velocity {citationStat.velocity.toFixed(2)}</>}
-        </p>
+      {(citationStat || rankMovement) && (
+        <div className={styles.statsRow}>
+          {citationStat && (
+            <p className={styles.citationStat}>
+              {citationStat.count} {citationStat.count === 1 ? 'citation' : 'citations'}
+              {citationStat.velocity !== undefined && <> · velocity {citationStat.velocity.toFixed(2)}</>}
+            </p>
+          )}
+          {rankMovement?.isNew && (
+            <span className={`${styles.rankBadge} ${styles.rankNew}`}>NEW</span>
+          )}
+          {rankMovement && !rankMovement.isNew && rankMovement.delta !== null && (
+            <span
+              className={`${styles.rankBadge} ${rankMovement.delta > 0 ? styles.rankUp : styles.rankDown}`}
+            >
+              {rankMovement.delta > 0 ? `↑${rankMovement.delta}` : `↓${Math.abs(rankMovement.delta)}`}
+            </span>
+          )}
+        </div>
       )}
     </article>
   )

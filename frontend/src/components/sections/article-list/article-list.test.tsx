@@ -4,7 +4,7 @@ import { axe } from 'jest-axe'
 import ArticleList from './article-list'
 import ReadingListProvider from '@/components/providers/reading-list-provider'
 import { getSavedArticles } from '@/utils/api'
-import type { ArticleSearchResult, CitationStat } from '@/types'
+import type { ArticleSearchResult, CitationStat, RankMovement } from '@/types'
 
 jest.mock('@/utils/api', () => ({
   getSavedArticles: jest.fn(),
@@ -31,11 +31,17 @@ function makeArticle(overrides: Partial<ArticleSearchResult> = {}): ArticleSearc
 async function renderList(
   articles: ArticleSearchResult[],
   citationStats?: Record<string, CitationStat>,
-  notableTypes?: Record<string, string>
+  notableTypes?: Record<string, string>,
+  rankMovements?: Record<string, RankMovement>
 ) {
   const utils = render(
     <ReadingListProvider>
-      <ArticleList articles={articles} citationStats={citationStats} notableTypes={notableTypes} />
+      <ArticleList
+        articles={articles}
+        citationStats={citationStats}
+        notableTypes={notableTypes}
+        rankMovements={rankMovements}
+      />
     </ReadingListProvider>
   )
   // Flush the provider's initial getSavedArticles() fetch so its resolution
@@ -95,6 +101,18 @@ describe('ArticleList', () => {
 
     // Assert
     expect(screen.getByText('Randomized Controlled Trial')).toBeInTheDocument()
+  })
+
+  it('passes the matching rankMovement through to each card by pmid', async () => {
+    // Arrange
+    const articles = [makeArticle({ pmid: '1' }), makeArticle({ pmid: '2' })]
+    const rankMovements = { '1': { delta: null, isNew: true } }
+
+    // Act
+    await renderList(articles, undefined, undefined, rankMovements)
+
+    // Assert
+    expect(screen.getByText('NEW')).toBeInTheDocument()
   })
 
   it('has no automatically detectable accessibility violations', async () => {

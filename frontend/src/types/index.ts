@@ -41,6 +41,13 @@ export interface TrendingArticle extends ArticleSearchResult {
   citation_count: number
   velocity: number
   notable_type: string | null
+  rank_delta: number | null
+  is_new: boolean
+}
+
+export interface RankMovement {
+  delta: number | null
+  isNew: boolean
 }
 
 export interface TrendingResponse {

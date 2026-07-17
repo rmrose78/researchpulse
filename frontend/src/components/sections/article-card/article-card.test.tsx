@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { axe } from 'jest-axe'
 import ArticleCard from './article-card'
-import type { ArticleSearchResult, CitationStat } from '@/types'
+import type { ArticleSearchResult, CitationStat, RankMovement } from '@/types'
 
 beforeAll(() => {
   Object.defineProperty(window, 'matchMedia', {
@@ -35,7 +35,8 @@ function renderCard(
   overrides: Partial<ArticleSearchResult> = {},
   isSaved = false,
   citationStat?: CitationStat,
-  notableType?: string
+  notableType?: string,
+  rankMovement?: RankMovement
 ) {
   return render(
     <ArticleCard
@@ -44,6 +45,7 @@ function renderCard(
       onSaveToggle={jest.fn()}
       citationStat={citationStat}
       notableType={notableType}
+      rankMovement={rankMovement}
     />
   )
 }
@@ -248,6 +250,38 @@ describe('ArticleCard', () => {
 
     // Assert
     expect(screen.getByText('Randomized Controlled Trial')).toBeInTheDocument()
+  })
+
+  it('renders no rank-movement badge when rankMovement is not provided', () => {
+    // Arrange & Act
+    renderCard()
+
+    // Assert
+    expect(screen.queryByText(/^↑|^↓|^NEW$/)).not.toBeInTheDocument()
+  })
+
+  it('renders a NEW badge when rankMovement.isNew is true', () => {
+    // Arrange & Act
+    renderCard({}, false, undefined, undefined, { delta: null, isNew: true })
+
+    // Assert
+    expect(screen.getByText('NEW')).toBeInTheDocument()
+  })
+
+  it('renders an up arrow with the delta when rank moved up', () => {
+    // Arrange & Act
+    renderCard({}, false, undefined, undefined, { delta: 3, isNew: false })
+
+    // Assert
+    expect(screen.getByText('↑3')).toBeInTheDocument()
+  })
+
+  it('renders a down arrow with the magnitude when rank moved down', () => {
+    // Arrange & Act
+    renderCard({}, false, undefined, undefined, { delta: -2, isNew: false })
+
+    // Assert
+    expect(screen.getByText('↓2')).toBeInTheDocument()
   })
 
   it('has no automatically detectable accessibility violations when collapsed', async () => {
