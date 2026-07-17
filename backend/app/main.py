@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import search, reading_list, trending
 from app.config import settings
-from app.database import create_tables_with_retry
+from app.database import initialize_database
 import app.models.reading_list
 import app.models.trending
 
@@ -35,7 +35,7 @@ app.add_middleware(
 )
 
 # Auto-create tables on startup
-create_tables_with_retry()
+initialize_database()
 
 app.include_router(search.router)
 app.include_router(reading_list.router)

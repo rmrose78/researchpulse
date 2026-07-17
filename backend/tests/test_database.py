@@ -46,3 +46,22 @@ def test_create_tables_with_retry_raises_after_exhausting_attempts(monkeypatch):
     # Act & Assert
     with pytest.raises(OperationalError):
         database.create_tables_with_retry(max_attempts=3, delay_seconds=0)
+
+
+def test_initialize_database_does_not_raise_when_retry_succeeds(monkeypatch):
+    # Arrange
+    monkeypatch.setattr(database, "create_tables_with_retry", lambda **kwargs: None)
+
+    # Act & Assert (no exception means pass)
+    database.initialize_database()
+
+
+def test_initialize_database_does_not_raise_when_retry_exhausts_attempts(monkeypatch):
+    # Arrange
+    def always_raises(**kwargs):
+        raise OperationalError("stmt", {}, Exception("connection refused"))
+
+    monkeypatch.setattr(database, "create_tables_with_retry", always_raises)
+
+    # Act & Assert (no exception means pass — failure is logged, not raised)
+    database.initialize_database()
