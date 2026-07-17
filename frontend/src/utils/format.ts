@@ -8,9 +8,14 @@ function pluralize(count: number, singular: string): string {
 // mode where this signal doesn't just repeat the citation count shown
 // elsewhere on the card, so it stays a standalone sentence.
 export function whyTrendingSentence(article: TrendingArticle): string {
-  const days = pluralize(article.age_days, 'day')
-  if (article.notable_type) return `${article.notable_type} · published ${article.age_days} ${days} ago`
-  return `Published ${article.age_days} ${days} ago`
+  // PubMed dates are month-precision only, so a same-month article computes
+  // age_days = 0 — "published 0 days ago" reads like a bug, not a fact.
+  const recency =
+    article.age_days === 0
+      ? 'published this month'
+      : `published ${article.age_days} ${pluralize(article.age_days, 'day')} ago`
+  if (article.notable_type) return `${article.notable_type} · ${recency}`
+  return recency.charAt(0).toUpperCase() + recency.slice(1)
 }
 
 // Trending/Most Cited: rather than a parallel sentence repeating the
@@ -19,7 +24,10 @@ export function whyTrendingSentence(article: TrendingArticle): string {
 // trending response already carries — never an extra API call.
 export function citationDetail(article: TrendingArticle, mode: string): string | undefined {
   if (mode === 'trending') {
-    return `in its first ${article.age_days} ${pluralize(article.age_days, 'day')}`
+    // See age_days = 0 note in whyTrendingSentence above.
+    return article.age_days === 0
+      ? 'so far'
+      : `in its first ${article.age_days} ${pluralize(article.age_days, 'day')}`
   }
   if (mode === 'most_cited') {
     return 'overall'
