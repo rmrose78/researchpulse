@@ -1,10 +1,11 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useReadingList } from '@/hooks/use-reading-list'
 import ArticleList from '@/components/sections/article-list/article-list'
 import SearchSkeleton from '@/components/sections/search-skeleton/search-skeleton'
 import EmptyState from '@/components/sections/empty-state/empty-state'
 import ErrorState from '@/components/sections/error-state/error-state'
-import type { ArticleSearchResult, SavedArticle } from '@/types'
+import { getReadingListCitations } from '@/utils/api'
+import type { ArticleSearchResult, CitationStat, SavedArticle } from '@/types'
 import styles from './reading-list-page.module.scss'
 
 // SavedArticle stores no abstract and joins authors into one string — convert
@@ -26,6 +27,32 @@ export default function ReadingListPage() {
   const { status, articles, retry } = useReadingList()
   const results = useMemo(() => articles.map(toArticleSearchResult), [articles])
 
+  const [citationCounts, setCitationCounts] = useState<Record<string, number>>({})
+
+  useEffect(() => {
+    if (status !== 'success' || articles.length === 0) return
+    let cancelled = false
+    // Best-effort — a failed or slow Semantic Scholar batch call must never
+    // block the reading list itself, so failures are swallowed silently.
+    getReadingListCitations()
+      .then((counts) => {
+        if (!cancelled) setCitationCounts(counts)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [status, articles])
+
+  const citationStats = useMemo(() => {
+    const map: Record<string, CitationStat> = {}
+    for (const article of articles) {
+      const count = citationCounts[article.pmid]
+      if (count !== undefined) map[article.pmid] = { count }
+    }
+    return map
+  }, [articles, citationCounts])
+
   return (
     <section className={styles.section} aria-labelledby="reading-list-heading">
       <h1 id="reading-list-heading" className={styles.heading}>
@@ -39,7 +66,7 @@ export default function ReadingListPage() {
         {status === 'success' && articles.length > 0 && (
           <>
             <h2 className={styles.visuallyHidden}>Saved articles</h2>
-            <ArticleList articles={results} />
+            <ArticleList articles={results} citationStats={citationStats} />
           </>
         )}
         {status === 'error' && <ErrorState onRetry={retry} />}

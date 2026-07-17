@@ -32,7 +32,8 @@ async function renderList(
   articles: ArticleSearchResult[],
   citationStats?: Record<string, CitationStat>,
   notableTypes?: Record<string, string>,
-  rankMovements?: Record<string, RankMovement>
+  rankMovements?: Record<string, RankMovement>,
+  whyTrending?: Record<string, string>
 ) {
   const utils = render(
     <ReadingListProvider>
@@ -41,6 +42,7 @@ async function renderList(
         citationStats={citationStats}
         notableTypes={notableTypes}
         rankMovements={rankMovements}
+        whyTrending={whyTrending}
       />
     </ReadingListProvider>
   )
@@ -113,6 +115,18 @@ describe('ArticleList', () => {
 
     // Assert
     expect(screen.getByText('NEW')).toBeInTheDocument()
+  })
+
+  it('passes the matching whyTrending sentence through to each card by pmid', async () => {
+    // Arrange
+    const articles = [makeArticle({ pmid: '1' }), makeArticle({ pmid: '2' })]
+    const whyTrending = { '1': '41 citations in its first 90 days' }
+
+    // Act
+    await renderList(articles, undefined, undefined, undefined, whyTrending)
+
+    // Assert
+    expect(screen.getByText('41 citations in its first 90 days')).toBeInTheDocument()
   })
 
   it('has no automatically detectable accessibility violations', async () => {

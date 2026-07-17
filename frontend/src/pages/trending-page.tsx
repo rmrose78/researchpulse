@@ -8,7 +8,7 @@ import TrendingFilters from '@/components/sections/trending-filters/trending-fil
 import VelocityExplainer from '@/components/sections/velocity-explainer/velocity-explainer'
 import NotabilityExplainer from '@/components/sections/notability-explainer/notability-explainer'
 import { useTrending } from '@/hooks/use-trending'
-import { formatRelativeTime } from '@/utils/format'
+import { citationDetail, formatRelativeTime, whyTrendingSentence } from '@/utils/format'
 import type { CitationStat, RankMovement } from '@/types'
 import styles from './trending-page.module.scss'
 
@@ -38,8 +38,8 @@ export default function TrendingPage() {
       if (mode === 'new_notable' && article.citation_count === 0) continue
       map[article.pmid] =
         mode === 'trending'
-          ? { count: article.citation_count, velocity: article.velocity }
-          : { count: article.citation_count }
+          ? { count: article.citation_count, velocity: article.velocity, detail: citationDetail(article, mode) }
+          : { count: article.citation_count, detail: citationDetail(article, mode) }
     }
     return map
   }, [trendingArticles, mode])
@@ -62,6 +62,15 @@ export default function TrendingPage() {
     }
     return map
   }, [trendingArticles])
+
+  const whyTrending = useMemo(() => {
+    const map: Record<string, string> = {}
+    if (mode !== 'new_notable') return map
+    for (const article of trendingArticles) {
+      map[article.pmid] = whyTrendingSentence(article)
+    }
+    return map
+  }, [trendingArticles, mode])
 
   return (
     <Hero>
@@ -96,6 +105,7 @@ export default function TrendingPage() {
                 citationStats={citationStats}
                 notableTypes={notableTypes}
                 rankMovements={rankMovements}
+                whyTrending={whyTrending}
               />
             )}
             {trendingStatus === 'error' && <ErrorState onRetry={retryTrending} />}

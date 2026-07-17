@@ -63,6 +63,15 @@ export async function getSavedArticles(): Promise<SavedArticle[]> {
   return res.json()
 }
 
+// Best-effort — a failure here should never block the reading list itself
+// from rendering, so callers are expected to catch and fall back silently.
+export async function getReadingListCitations(): Promise<Record<string, number>> {
+  const res = await fetch(`${BASE_URL}/api/reading-list/citations`)
+  if (!res.ok) throw new Error(`API error: ${res.status}`)
+  const data = await res.json()
+  return data.citations
+}
+
 export async function getTrending(
   specialty: string,
   mode: string,

@@ -9,6 +9,10 @@ class SaveArticleRequest(BaseModel):
     pub_date: str | None = None
     doi: str | None = None
 
+class ReadingListCitationsResponse(BaseModel):
+    citations: dict[str, int]
+
+
 class SavedArticleResponse(BaseModel):
     id: int
     pmid: str

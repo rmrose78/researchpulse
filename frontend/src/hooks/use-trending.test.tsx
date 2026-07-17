@@ -32,6 +32,7 @@ function makeArticle(overrides: Partial<TrendingArticle> = {}): TrendingArticle 
     notable_type: null,
     rank_delta: null,
     is_new: false,
+    age_days: 30,
     ...overrides,
   }
 }

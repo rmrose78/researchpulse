@@ -36,7 +36,8 @@ function renderCard(
   isSaved = false,
   citationStat?: CitationStat,
   notableType?: string,
-  rankMovement?: RankMovement
+  rankMovement?: RankMovement,
+  whyTrending?: string
 ) {
   return render(
     <ArticleCard
@@ -46,6 +47,7 @@ function renderCard(
       citationStat={citationStat}
       notableType={notableType}
       rankMovement={rankMovement}
+      whyTrending={whyTrending}
     />
   )
 }
@@ -236,6 +238,22 @@ describe('ArticleCard', () => {
     expect(screen.queryByText(/velocity/i)).not.toBeInTheDocument()
   })
 
+  it('renders the detail qualifier inline between the count and velocity', () => {
+    // Arrange & Act
+    renderCard({}, false, { count: 7, velocity: 0.1, detail: 'in its first 46 days' })
+
+    // Assert
+    expect(screen.getByText('7 citations in its first 46 days · velocity 0.10')).toBeInTheDocument()
+  })
+
+  it('renders the detail qualifier with no velocity when velocity is absent', () => {
+    // Arrange & Act
+    renderCard({}, false, { count: 7, detail: 'overall' })
+
+    // Assert
+    expect(screen.getByText('7 citations overall')).toBeInTheDocument()
+  })
+
   it('renders no evidence-tier badge when notableType is not provided', () => {
     // Arrange & Act
     renderCard()
@@ -282,6 +300,22 @@ describe('ArticleCard', () => {
 
     // Assert
     expect(screen.getByText('↓2')).toBeInTheDocument()
+  })
+
+  it('renders no "why it\'s trending" line when whyTrending is not provided', () => {
+    // Arrange & Act
+    renderCard()
+
+    // Assert
+    expect(screen.queryByText(/citations in its first|citations overall|published/i)).not.toBeInTheDocument()
+  })
+
+  it('renders the "why it\'s trending" line when whyTrending is provided', () => {
+    // Arrange & Act
+    renderCard({}, false, undefined, undefined, undefined, '41 citations in its first 90 days')
+
+    // Assert
+    expect(screen.getByText('41 citations in its first 90 days')).toBeInTheDocument()
   })
 
   it('has no automatically detectable accessibility violations when collapsed', async () => {

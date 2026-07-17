@@ -9,6 +9,7 @@ class TrendingArticle(ArticleSearchResult):
     notable_type: str | None = None
     rank_delta: int | None = None
     is_new: bool = False
+    age_days: int = 0
 
 
 class TrendingResponse(BaseModel):

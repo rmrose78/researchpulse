@@ -123,6 +123,33 @@ def test_delete_saved_article_returns_204():
     assert response.status_code == 204
 
 
+def test_get_reading_list_citations_returns_counts_for_saved_articles(monkeypatch):
+    # Arrange — the citations endpoint reads request.app.state.http_client,
+    # which is only populated when the app's lifespan has actually run.
+    pmid = "90000007"
+    _delete_if_exists(pmid)
+    client.post("/api/reading-list/", json={"pmid": pmid, "title": "Citations Endpoint Test"})
+
+    async def fake_get_citation_counts(_client, pmids):
+        return {pmid: 99 for pmid in pmids}
+
+    from app.services import reading_list as reading_list_service
+    monkeypatch.setattr(
+        reading_list_service.semantic_scholar_service, "get_citation_counts", fake_get_citation_counts
+    )
+
+    # Act
+    with TestClient(app) as lifespan_client:
+        response = lifespan_client.get("/api/reading-list/citations")
+    data = response.json()
+
+    # Assert
+    assert response.status_code == 200
+    assert data["citations"][pmid] == 99
+
+    _delete_if_exists(pmid)
+
+
 def test_delete_nonexistent_article_returns_404():
     # Arrange
     pmid = "00000000"

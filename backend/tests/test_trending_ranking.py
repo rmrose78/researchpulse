@@ -133,6 +133,19 @@ def test_rank_articles_includes_citation_stat_fields():
     assert ranked[0].velocity == 28 / (196 + 21)
 
 
+def test_rank_articles_includes_age_days_field():
+    # Arrange
+    articles = [_article("1", "2024/Jan")]
+    citation_counts = {"1": 5}
+    today = date(2024, 7, 15)  # 196 days after Jan 1
+
+    # Act
+    ranked = rank_articles(articles, citation_counts, today)
+
+    # Assert
+    assert ranked[0].age_days == 196
+
+
 def test_rank_articles_trending_mode_still_excludes_zero_citation_articles():
     # Arrange — explicit "trending" mode behaves the same as the default
     articles = [_article("1", "2024/Jan"), _article("2", "2024/Jan")]

@@ -1,3 +1,32 @@
+import type { TrendingArticle } from '@/types'
+
+function pluralize(count: number, singular: string): string {
+  return count === 1 ? singular : `${singular}s`
+}
+
+// A one-line evidence-tier/recency sentence for New & Notable — the only
+// mode where this signal doesn't just repeat the citation count shown
+// elsewhere on the card, so it stays a standalone sentence.
+export function whyTrendingSentence(article: TrendingArticle): string {
+  const days = pluralize(article.age_days, 'day')
+  if (article.notable_type) return `${article.notable_type} · published ${article.age_days} ${days} ago`
+  return `Published ${article.age_days} ${days} ago`
+}
+
+// Trending/Most Cited: rather than a parallel sentence repeating the
+// citation count, this is folded straight into the existing citation-stat
+// line as a trailing qualifier — computed entirely from fields the
+// trending response already carries — never an extra API call.
+export function citationDetail(article: TrendingArticle, mode: string): string | undefined {
+  if (mode === 'trending') {
+    return `in its first ${article.age_days} ${pluralize(article.age_days, 'day')}`
+  }
+  if (mode === 'most_cited') {
+    return 'overall'
+  }
+  return undefined
+}
+
 export function truncate(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text
   return `${text.slice(0, maxLength).trimEnd()}…`
