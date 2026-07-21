@@ -45,19 +45,23 @@
 }
 
 .brand {
-  font-family: $font-heading;
-  font-weight: 700;
-  font-size: 1.25rem;
-  color: $white;
-  transition: $transition-base;
+  display: flex;
+  align-items: center;
 
-  &:hover {
-    color: $clinical-blue;
+  &:hover .brandLogo {
+    transform: scale(1.05);
   }
 
   @media (prefers-reduced-motion: reduce) {
-    transition: none;
+    .brandLogo {
+      transition: none;
+    }
   }
+}
+
+.brandLogo {
+  display: block;
+  transition: $transition-base;
 }
 
 .navLinks {

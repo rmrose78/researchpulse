@@ -9,11 +9,11 @@ export default function Hero({ children }: HeroProps) {
   return (
     <section className={styles.hero} aria-labelledby="hero-heading">
       <h1 id="hero-heading" className={styles.heading}>
-        Trending biomedical research, explained in plain English.
+        Trending biomedical research, ranked by citation velocity.
       </h1>
       <p className={styles.subtitle}>
-        PubMed shows you everything. ResearchPulse shows you what matters right now — and what it
-        means.
+        PubMed shows you everything. ResearchPulse shows you what&apos;s rising right now, and
+        why.
       </p>
       {children}
     </section>

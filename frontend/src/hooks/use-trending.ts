@@ -97,8 +97,9 @@ export function useTrending(): UseTrendingResult {
           setComputedAt(response.computed_at)
           setStatus('success')
         })
-        .catch(() => {
+        .catch((error) => {
           if (requestIdRef.current !== requestId) return
+          console.error('Failed to load trending articles:', error)
           setStatus('error')
         })
     },

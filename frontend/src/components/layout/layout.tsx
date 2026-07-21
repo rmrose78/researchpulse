@@ -21,7 +21,7 @@ export default function Layout({ children }: LayoutProps) {
       <header>
         <nav className={styles.nav} aria-label="Primary">
           <NavLink to="/" end className={styles.brand} aria-label="ResearchPulse home">
-            ResearchPulse
+            <img src="/logo-full-v2.svg" alt="" className={styles.brandLogo} height={48} />
           </NavLink>
           <ul className={styles.navLinks}>
             {NAV_ITEMS.map((item) => (

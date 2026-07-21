@@ -1,5 +1,5 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals'
-import { act, render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { axe } from 'jest-axe'
@@ -244,7 +244,7 @@ describe('TrendingPage', () => {
 
     // Assert
     await waitFor(() => expect(screen.getByText('50 citations overall')).toBeInTheDocument())
-    expect(screen.queryByText(/velocity/i)).not.toBeInTheDocument()
+    expect(within(screen.getByRole('list')).queryByText(/velocity/i)).not.toBeInTheDocument()
   })
 
   it('hides the citation stat line for 0-citation articles in New & Notable mode, but keeps it for nonzero ones', async () => {
