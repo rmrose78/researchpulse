@@ -3,6 +3,8 @@
 > Full stack biomedical research discovery platform — actively in development.
 > Built with FastAPI, PostgreSQL, and React + TypeScript.
 
+![ResearchPulse demo](docs/media/demo.gif)
+
 ## The Problem
 PubMed indexes 35+ million biomedical articles. Finding what's actually
 relevant — and understanding it — is the real challenge. ResearchPulse
