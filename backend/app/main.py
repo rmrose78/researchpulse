@@ -2,11 +2,12 @@ from contextlib import asynccontextmanager
 import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import search, reading_list, trending
+from app.routers import search, reading_list, trending, analytics
 from app.config import settings
 from app.database import initialize_database
 import app.models.reading_list
 import app.models.trending
+import app.models.analytics
 
 
 @asynccontextmanager
@@ -40,6 +41,7 @@ initialize_database()
 app.include_router(search.router)
 app.include_router(reading_list.router)
 app.include_router(trending.router)
+app.include_router(analytics.router)
 
 @app.get("/health")
 async def health_check():

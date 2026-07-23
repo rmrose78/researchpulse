@@ -65,3 +65,27 @@ export interface TrendingAvailabilityResponse {
   mode: string
   available: Record<string, boolean>
 }
+
+export interface PathCount {
+  path: string
+  count: number
+}
+
+export interface ReferrerCount {
+  referrer: string
+  count: number
+}
+
+export interface AnalyticsBucket {
+  total_views: number
+  top_paths: PathCount[]
+  top_referrers: ReferrerCount[]
+}
+
+export interface AnalyticsSummary {
+  today: AnalyticsBucket
+  this_week: AnalyticsBucket
+  this_month: AnalyticsBucket
+  this_year: AnalyticsBucket
+  all_time: AnalyticsBucket
+}

@@ -16,3 +16,11 @@ GET    /api/reading-list/citations  ✅ done — best-effort live Semantic Schol
                                      decoupled from the primary reading-list
                                      fetch (mirrors /api/trending/availability)
 GET    /api/search/{pmid}/summary   — Phase 3
+POST   /api/analytics/pageview      ✅ done — anonymous page-view logging,
+                                     fired by the frontend on every route
+                                     change
+GET    /api/analytics/summary       ✅ done — Day/Week/Month/Year/All-time
+                                     view counts + top paths/referrers;
+                                     requires a `key` query param matching
+                                     `ANALYTICS_SECRET`, fails closed (404) if
+                                     unset or mismatched

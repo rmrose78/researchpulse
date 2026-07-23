@@ -60,9 +60,6 @@ Product pitch: "Trending biomedical research, explained in plain English."
 Target users: clinicians, health IT analysts, policy professionals —
 people who need to act on research, not write it.
 
-Portfolio project targeting health IT and defense contractor roles in
-the Fort Meade, Maryland area (Leidos, Booz Allen).
-
 ---
 
 ## Developer Context
@@ -95,6 +92,12 @@ shipped, including DB-connection retry/resilience found necessary during
 the live deploy itself. Follow-up: real Alembic migrations before Phase 3
 touches the schema (issue #27, still open).
 
+A self-hosted, secret-gated page-view analytics dashboard (issue #35) is
+also live at `/analytics` (not linked in nav) — Day/Week/Month/Year/All-time
+view counts, top paths, top referrers, reusing the existing Postgres
+instance instead of a paid third-party analytics tool. See
+`docs/reference/environment.md` for `ANALYTICS_SECRET`.
+
 Completed:
 - GET /health ✅
 - GET /api/search/ ✅
@@ -116,6 +119,8 @@ Completed:
 - Sticky specialty/mode selection ✅ (persisted to `localStorage`,
   restored on load, URL params take precedence for shareable/bookmarked
   links)
+- POST /api/analytics/pageview ✅
+- GET /api/analytics/summary ✅ (secret-gated, fails closed)
 
 No open issues in `docs/issues/trending/` — Phase 2 is complete.
 

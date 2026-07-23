@@ -7,10 +7,10 @@
 
 ## The Problem
 PubMed indexes 35+ million biomedical articles. Finding what's actually
-relevant — and understanding it — is the real challenge. ResearchPulse
-surfaces trending research using citation velocity and explains it in
-plain English for clinicians, health IT analysts, and policy professionals
-who need to act on research, not just find it.
+relevant is the real challenge. ResearchPulse surfaces trending research
+using a citation-velocity ranking algorithm, built for clinicians, health
+IT analysts, and policy professionals who need to act on research, not
+just find it.
 
 ## Status
 **Active development** — Phase 1 (Core) complete, Phase 2 (Trending) complete
@@ -92,6 +92,9 @@ DELETE /api/reading-list/{pmid}   — remove saved article
 GET    /api/trending/             — trending articles by specialty/mode/window
 GET    /api/trending/availability — cache availability for a given filter combo
 GET    /api/reading-list/citations — live citation counts for saved articles
+POST   /api/analytics/pageview    — anonymous page-view logging
+GET    /api/analytics/summary     — Day/Week/Month/Year/All-time view counts
+                                     (secret-gated, see docs/reference/environment.md)
 
 ## Running Locally
 
@@ -108,19 +111,16 @@ uvicorn app.main:app --reload
 Copy `.env.example` to `.env` in `backend/` and fill in your values:
 PUBMED_API_KEY=your_key_here
 DATABASE_URL=postgresql://localhost/researchpulse
-ANTHROPIC_API_KEY=your_key_here
-AI_ENABLED=false
+
+Full variable list (CORS, analytics secret, etc.) in
+`docs/reference/environment.md`.
 
 ### Running Tests
 ```bash
 cd backend && pytest tests/ -v
 ```
 
-## Background
-Built as a portfolio project by a biomedical engineer with 4 years of
-frontend experience, learning Python and FastAPI. Targeting health IT
-and defense contractor roles in the Fort Meade, Maryland area.
-
-Demonstrates: full stack development, external API integration,
-PostgreSQL persistence, AI-assisted engineering workflow, and
-domain expertise in biomedical research.
+## What This Demonstrates
+Full stack development, external API integration, PostgreSQL persistence,
+an AI-assisted engineering workflow, and domain expertise in biomedical
+research.

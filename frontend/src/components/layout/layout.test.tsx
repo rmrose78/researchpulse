@@ -1,9 +1,15 @@
-import { describe, it, expect } from '@jest/globals'
+import { describe, it, expect, jest } from '@jest/globals'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { axe } from 'jest-axe'
 import Layout from './layout'
+
+// Layout mounts the page-view tracking hook — stub it out here so these tests
+// stay focused on nav/landmark structure, not network calls.
+jest.mock('@/utils/api', () => ({
+  postPageView: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+}))
 
 function renderLayout(initialEntry = '/') {
   return render(
