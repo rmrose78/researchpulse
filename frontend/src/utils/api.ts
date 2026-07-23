@@ -1,4 +1,5 @@
 import type {
+  AnalyticsSummary,
   ArticleSearchResult,
   SavedArticle,
   SearchFilters,
@@ -91,6 +92,25 @@ export async function getTrendingAvailability(
 ): Promise<TrendingAvailabilityResponse> {
   const params = new URLSearchParams({ mode, window_days: String(windowDays) })
   const res = await fetch(`${BASE_URL}/api/trending/availability?${params.toString()}`)
+  if (!res.ok) throw new Error(`API error: ${res.status}`)
+  return res.json()
+}
+
+// Fire-and-forget from the caller's side — this call itself still throws on
+// failure so callers can choose how to handle it (the tracking hook swallows
+// it, matching the app's other best-effort background calls).
+export async function postPageView(path: string, referrer: string): Promise<void> {
+  const res = await fetch(`${BASE_URL}/api/analytics/pageview`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path, referrer: referrer || null }),
+  })
+  if (!res.ok) throw new Error(`API error: ${res.status}`)
+}
+
+export async function getAnalyticsSummary(key: string): Promise<AnalyticsSummary> {
+  const params = new URLSearchParams({ key })
+  const res = await fetch(`${BASE_URL}/api/analytics/summary?${params.toString()}`)
   if (!res.ok) throw new Error(`API error: ${res.status}`)
   return res.json()
 }

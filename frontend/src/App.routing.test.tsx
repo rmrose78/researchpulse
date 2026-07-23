@@ -11,6 +11,7 @@ jest.mock('@/utils/api', () => ({
   removeSavedArticle: jest.fn(),
   getTrending: jest.fn(),
   getTrendingAvailability: jest.fn(),
+  postPageView: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
 }))
 
 function navigateTo(path: string) {

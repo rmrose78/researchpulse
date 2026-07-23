@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { NavLink } from 'react-router-dom'
+import { usePageViewTracking } from '@/hooks/use-pageview-tracking'
 import MobileNav from './mobile-nav/mobile-nav'
 import { NAV_ITEMS } from './nav-items'
 import styles from './layout.module.scss'
@@ -13,6 +14,8 @@ function navLinkClassName({ isActive }: { isActive: boolean }): string {
 }
 
 export default function Layout({ children }: LayoutProps) {
+  usePageViewTracking()
+
   return (
     <div className={styles.page}>
       <a href="#main-content" className={styles.skipLink}>

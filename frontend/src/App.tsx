@@ -5,6 +5,7 @@ import TrendingPage from '@/pages/trending-page'
 import SearchPage from '@/pages/search-page'
 import ReadingListPage from '@/pages/reading-list-page'
 import HowItWorksPage from '@/pages/how-it-works-page'
+import AnalyticsPage from '@/pages/analytics-page'
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
             <Route path="/search" element={<SearchPage />} />
             <Route path="/reading-list" element={<ReadingListPage />} />
             <Route path="/how-it-works" element={<HowItWorksPage />} />
+            <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Layout>
